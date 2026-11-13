@@ -100,7 +100,7 @@ const $ = id => document.getElementById(id);
 const today = new Date();
 $('today').textContent = today.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'});
 const hasConfig = window.SUPABASE_URL.startsWith('https://') && !window.SUPABASE_URL.includes('YOUR_PROJECT') && window.SUPABASE_ANON_KEY.length > 20 && !window.SUPABASE_ANON_KEY.includes('YOUR_');
-let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[];
+let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[], pubList=[];
 if(hasConfig && window.supabase) sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
 function msg(id,text){$(id).textContent=text;$(id).classList.remove('hidden')}
@@ -134,10 +134,23 @@ async function loadData(){
  const correct=attempts.filter(x=>x.is_correct).length;
  $('statRate').textContent=attempts.length?Math.round(correct/attempts.length*100)+'%':'0%';
  $('statPoints').textContent=(correct*10)+' PTS';
+ await refreshPublished();
  renderCourses();populateAdminCourses();renderCourseManagement();
 }
+function dayKey(d){const x=new Date(d);return x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate()}
+function progressText(cid){
+ const t=dayKey(new Date()),done=new Set(attempts.map(a=>a.question_id));
+ const qs=pubList.filter(q=>q.course_id===cid&&q.published_at&&dayKey(q.published_at)===t);
+ if(!qs.length)return '今日尚無新題';
+ const n=qs.filter(q=>done.has(q.id)).length;
+ return `今日 ${qs.length} 題<br><small>已完成 ${n}/${qs.length}</small>`;
+}
+async function refreshPublished(){
+ const {data}=await sb.from('hp_questions').select('id,course_id,published_at').eq('is_published',true);
+ pubList=data||[];
+}
 function renderCourses(){
- $('courseList').innerHTML=courses.map((c,i)=>`<button class="course" data-course="${c.id}"><div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count">${c.question_count||'進入'} →</span></button>`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
+ $('courseList').innerHTML=courses.map((c,i)=>`<button class="course" data-course="${c.id}"><div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count" style="text-align:right;line-height:1.5">${progressText(c.id)} →</span></button>`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
  document.querySelectorAll('[data-course]').forEach(b=>b.onclick=()=>openCourse(b.dataset.course));
 }
 function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
@@ -178,7 +191,7 @@ async function submitAnswer(qid){
  attempts.push({question_id:qid,is_correct:correct,created_at:new Date().toISOString()});
  card.querySelectorAll('input').forEach(x=>x.disabled=true);card.querySelector('.answer-btn').disabled=true;card.querySelector('.answer-btn').textContent='已完成';
  const fb=$('feedback_'+qid);fb.classList.remove('hidden');fb.innerHTML=`<b>${correct?'✨ 答對了！':'📖 再複習一次！'}</b><br>正確答案：${escapeHtml(result.correct_answer)}<br>${escapeHtml(result.explanation||'校長尚未提供解析。')}`;
- renderMath(fb);await refreshStats();
+ renderMath(fb);await refreshStats();renderCourses();
 }
 async function refreshStats(){
  const correct=attempts.filter(a=>a.is_correct).length;
@@ -208,10 +221,10 @@ async function loadQuestionBank(){
 async function updateSelectedQuestions(published){
  const ids=[...document.querySelectorAll('.bank-check:checked')].map(x=>x.value);
  if(!ids.length){msg('bankMsg','請先勾選要操作的題目。');return}
- const {error}=await sb.from('hp_questions').update({is_published:published}).in('id',ids);
+ const {error}=await sb.from('hp_questions').update({is_published:published,published_at:published?new Date().toISOString():null}).in('id',ids);
  if(error){msg('bankMsg','更新失敗：'+error.message);return}
  msg('bankMsg',published?`已發布 ${ids.length} 題，學生現在可以看到。`:`已收回 ${ids.length} 題，學生將不再看到。`);
- await loadQuestionBank();
+ await loadQuestionBank();await refreshPublished();renderCourses();
 }
 
 $('loginBtn').onclick=async()=>{if(!sb){init();return}const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)authNotice(error.message)};
