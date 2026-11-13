@@ -19,10 +19,84 @@
 </script>
 <script defer src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
 <style>
-:root{--gold:#e8c45b;--gold2:#9d7628;--ink:#100d14;--panel:rgba(18,14,23,.92);--line:rgba(220,174,67,.48);--muted:#b8a77c;--cream:#f5e8bd}
-*{box-sizing:border-box}html{min-height:100%;background:#0d0b0d}body{margin:0;color:var(--cream);font-family:Georgia,"Noto Serif TC","Songti TC",serif;min-height:100vh;background:linear-gradient(90deg,rgba(10,8,9,.82),rgba(10,8,9,.53)),linear-gradient(0deg,rgba(10,8,9,.9),rgba(10,8,9,.24)),url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=85') center/cover fixed}
-body:before{content:"";position:fixed;inset:0;pointer-events:none;background:radial-gradient(ellipse at 50% 15%,transparent 0,rgba(0,0,0,.4) 75%),repeating-linear-gradient(90deg,transparent 0 95px,rgba(232,196,91,.025) 96px 97px);z-index:0}
-button,input,textarea,select{font:inherit}button{cursor:pointer}.wrap{position:relative;z-index:1;max-width:1020px;margin:auto;padding:22px 20px 100px}.topbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:13px}.crest{width:52px;height:52px;border:2px solid #c7a342;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#55401b,#130e12 68%);box-shadow:0 0 18px #b88b2b55;font-size:27px}.brand h1{font-size:22px;letter-spacing:2px;margin:0;color:#f4d36e}.brand small{display:block;color:#c5a958;letter-spacing:2px;margin-top:3px}.top-actions{display:flex;gap:9px;align-items:center}.pill,.btn{border:1px solid var(--gold2);background:linear-gradient(120deg,#4c3516,#17121b);color:#f7d878;border-radius:22px;padding:9px 15px}.pill:hover,.btn:hover{filter:brightness(1.2)}.hero{border:1px solid #b89546;border-radius:18px;overflow:hidden;min-height:280px;position:relative;background:linear-gradient(90deg,rgba(12,9,15,.78),rgba(12,9,15,.3)),url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=85') center 48%/cover;box-shadow:0 12px 35px #0008,inset 0 0 0 4px #d9b95c12;display:flex;align-items:center;justify-content:center;text-align:center;padding:34px 22px}.hero:after{content:"";position:absolute;inset:8px;border:1px solid #d9b95c45;border-radius:12px;pointer-events:none}.hero-content{position:relative;z-index:1;max-width:700px}.hero-crest{width:92px;height:92px;border:3px double var(--gold);border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;background:radial-gradient(circle,#554018,#15101a 65%);font-size:46px;box-shadow:0 0 25px #d6a82a66}.motto{display:inline-block;border:1px solid var(--gold2);border-radius:20px;padding:5px 16px;font-size:11px;letter-spacing:1.5px;color:#f4d36e;background:#100c12b8}.hero h2{font-size:clamp(23px,4vw,34px);margin:13px 0 7px;text-shadow:0 2px 8px #000}.hero p{color:#e2c879;margin:6px 0;font-size:14px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 27px}.stat,.panel,.course,.question-card{background:linear-gradient(135deg,rgba(28,21,31,.97),rgba(13,11,18,.96));border:1px solid var(--line);border-radius:15px;box-shadow:inset 0 0 0 3px #c79c3310,0 8px 22px #0004}.stat{padding:15px;display:flex;gap:12px;align-items:center}.stat-icon{width:42px;height:42px;display:grid;place-items:center;border:1px solid #8f641e;border-radius:10px;background:#3b2615;font-size:21px}.stat small{color:#c2a04a;display:block;font-size:12px}.stat strong{font-size:21px;color:#f4d778}.section-head{display:flex;align-items:center;justify-content:space-between;margin:23px 4px 12px}.section-head h3{color:#f1d36d;margin:0;font-size:18px}.section-head span{font-size:12px;color:#b18a31;letter-spacing:1px}.course-list{display:grid;gap:11px}.course{padding:14px;display:flex;align-items:center;gap:14px;text-align:left;color:inherit;width:100%;transition:.18s}.course:hover{transform:translateY(-2px);border-color:#e6c35b;background:#211927}.course-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;background:#392514;border:1px solid #9b6a1e;border-radius:10px;font-size:22px}.course-info{flex:1;min-width:0}.course-info strong{font-size:16px}.course-info small{display:block;color:#b69a54;margin-top:4px}.tag{font-size:11px;color:#d4ae4b;border:1px solid #71521f;padding:2px 7px;border-radius:5px;margin-left:8px}.course-count{white-space:nowrap;color:#f2d25f;font-size:13px}.panel{padding:20px;margin:14px 0}.hidden{display:none!important}.back{margin:0 0 14px;color:#e8c45b;background:none;border:0;padding:8px 0}.panel h2{margin:0 0 6px;color:#f2d36c}.sub{color:#b9a56f;font-size:13px;margin:0 0 18px}.field{display:grid;gap:7px;margin:12px 0}.field label{font-size:13px;color:#d6b65c}.field input,.field textarea,.field select{width:100%;padding:12px;border-radius:9px;border:1px solid #75551f;background:#0d0b11;color:#f4e9c8;outline:none}.field textarea{min-height:130px;resize:vertical;line-height:1.6}.btn.primary{background:linear-gradient(120deg,#9a6b20,#4d3516);color:#fff1bd}.btn.danger{border-color:#78433a;color:#f0b7a5}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}.notice{padding:10px 12px;border:1px solid #78602c;border-radius:9px;color:#e9d28c;background:#241d16;margin:10px 0;font-size:13px}.question-card{padding:18px;margin:12px 0}.q-top{color:#c49d45;font-size:12px;margin-bottom:10px}.q-text{font-size:18px;line-height:1.8;color:#fff0c7}.option{display:flex;align-items:flex-start;gap:10px;border:1px solid #554126;background:#15111a;border-radius:9px;padding:11px;margin:8px 0;cursor:pointer}.option input{accent-color:#d8af48;margin-top:5px}.option:has(input:checked){border-color:#d8af48;background:#2b2118}.feedback{margin-top:12px;padding:12px;border-radius:9px;background:#211a13;border:1px solid #806126;line-height:1.7}.login-shell{max-width:470px;margin:7vh auto}.login-shell .hero{min-height:170px}.muted{color:#ad9c72;font-size:12px}.footer{text-align:center;color:#816c43;font-size:11px;margin-top:35px}.mobile-nav{display:none}
+:root{--gold:#e8c45b;--gold2:#9d7628;--ink:#100d14;--panel:rgba(18,14,23,.88);--line:rgba(220,174,67,.48);--muted:#b8a77c;--cream:#f5e8bd}
+*{box-sizing:border-box}html{min-height:100%;background:#09070b}
+body{margin:0;color:var(--cream);font-family:Georgia,"Noto Serif TC","Songti TC",serif;min-height:100vh;overflow-x:hidden;
+  /* 霍格華茲大禮堂深邃星空與古堡石牆氛圍漸層 */
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(42, 31, 61, 0.55) 0%, rgba(12, 9, 16, 0.85) 60%, rgba(7, 5, 10, 0.96) 100%),
+    linear-gradient(180deg, rgba(14,11,22,.65), rgba(8,6,11,.92)),
+    url('https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=2000&q=85') center/cover fixed
+}
+/* 背景魔法畫布：漂浮蠟燭與星塵 */
+#magicCanvas{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;z-index:0}
+
+/* 動態星芒與光暈動畫 */
+@keyframes floatSlow { 0%,100%{transform:translateY(0px)} 50%{transform:translateY(-6px)} }
+@keyframes pulseGlow { 0%,100%{box-shadow:0 0 18px rgba(232,196,91,.35), inset 0 0 10px rgba(232,196,91,.2)} 50%{box-shadow:0 0 32px rgba(232,196,91,.75), inset 0 0 18px rgba(232,196,91,.45)} }
+@keyframes shimmerSweep { 0%{transform:translateX(-150%) skewX(-20deg)} 100%{transform:translateX(250%) skewX(-20deg)} }
+@keyframes fadeSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
+
+button,input,textarea,select{font:inherit}button{cursor:pointer}
+.wrap{position:relative;z-index:2;max-width:1020px;margin:auto;padding:22px 20px 100px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}
+.brand{display:flex;align-items:center;gap:13px}
+.crest{width:52px;height:52px;border:2px solid #c7a342;border-radius:50%;display:grid;place-items:center;background:radial-gradient(circle,#55401b,#130e12 68%);animation:pulseGlow 4s infinite ease-in-out;font-size:27px}
+.brand h1{font-size:22px;letter-spacing:2px;margin:0;color:#f4d36e;text-shadow:0 0 12px rgba(244,211,110,.35)}
+.brand small{display:block;color:#c5a958;letter-spacing:2px;margin-top:3px}
+.top-actions{display:flex;gap:9px;align-items:center}
+
+/* 按鈕流光質感 */
+.pill,.btn{position:relative;overflow:hidden;border:1px solid var(--gold2);background:linear-gradient(120deg,#4c3516,#17121b);color:#f7d878;border-radius:22px;padding:9px 15px;transition:all .25s ease}
+.pill::after,.btn::after{content:"";position:absolute;top:0;left:0;width:45%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,240,180,.25),transparent);transform:translateX(-150%) skewX(-20deg);pointer-events:none}
+.pill:hover::after,.btn:hover::after{animation:shimmerSweep .85s ease}
+.pill:hover,.btn:hover{filter:brightness(1.18);border-color:#e8c45b;box-shadow:0 0 15px rgba(232,196,91,.3);transform:translateY(-1px)}
+
+/* Hero 橫幅升級 */
+.hero{border:1px solid #b89546;border-radius:18px;overflow:hidden;min-height:280px;position:relative;
+  background:radial-gradient(circle at 50% 25%, rgba(232,196,91,.16), transparent 65%),
+             linear-gradient(90deg,rgba(12,9,15,.82),rgba(12,9,15,.38)),
+             url('https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1600&q=85') center 48%/cover;
+  box-shadow:0 14px 40px rgba(0,0,0,.7),inset 0 0 0 4px #d9b95c18;display:flex;align-items:center;justify-content:center;text-align:center;padding:34px 22px}
+.hero:after{content:"";position:absolute;inset:8px;border:1px solid #d9b95c45;border-radius:12px;pointer-events:none}
+.hero-content{position:relative;z-index:1;max-width:700px;animation:fadeSlideUp .8s ease-out}
+.hero-crest{width:92px;height:92px;border:3px double var(--gold);border-radius:50%;margin:0 auto 16px;display:grid;place-items:center;background:radial-gradient(circle,#554018,#15101a 65%);font-size:46px;animation:floatSlow 4.5s infinite ease-in-out, pulseGlow 4s infinite ease-in-out}
+.motto{display:inline-block;border:1px solid var(--gold2);border-radius:20px;padding:5px 16px;font-size:11px;letter-spacing:1.5px;color:#f4d36e;background:#100c12c8;box-shadow:0 2px 10px rgba(0,0,0,.5)}
+.hero h2{font-size:clamp(23px,4vw,34px);margin:13px 0 7px;text-shadow:0 2px 12px #000, 0 0 20px rgba(232,196,91,.3)}
+.hero p{color:#e2c879;margin:6px 0;font-size:14px}
+
+/* 毛玻璃與魔法微光卡片 */
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:18px 0 27px}
+.stat,.panel,.course,.question-card{
+  background:linear-gradient(135deg,rgba(28,21,33,.92),rgba(13,11,18,.90));
+  backdrop-filter:blur(8px);
+  border:1px solid var(--line);border-radius:15px;
+  box-shadow:inset 0 0 0 3px #c79c3310,0 10px 26px rgba(0,0,0,.55);
+  animation:fadeSlideUp .5s ease backwards
+}
+.stat{padding:15px;display:flex;gap:12px;align-items:center;transition:transform .25s ease, border-color .25s ease}
+.stat:hover{transform:translateY(-3px);border-color:#f4d36e}
+.stat-icon{width:42px;height:42px;display:grid;place-items:center;border:1px solid #8f641e;border-radius:10px;background:radial-gradient(circle,#54371d,#2b1b0e);font-size:21px;box-shadow:0 0 12px rgba(232,196,91,.2)}
+.stat small{color:#c2a04a;display:block;font-size:12px}.stat strong{font-size:21px;color:#f4d778;text-shadow:0 0 8px rgba(244,215,120,.25)}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin:23px 4px 12px}.section-head h3{color:#f1d36d;margin:0;font-size:18px;text-shadow:0 0 10px rgba(241,211,109,.25)}.section-head span{font-size:12px;color:#b18a31;letter-spacing:1px}
+.course-list{display:grid;gap:11px}
+.course{position:relative;overflow:hidden;padding:14px;display:flex;align-items:center;gap:14px;text-align:left;color:inherit;width:100%;transition:all .25s cubic-bezier(.22,1,.36,1)}
+.course::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at var(--mx,50%) var(--my,50%), rgba(232,196,91,.16), transparent 60%);opacity:0;transition:opacity .3s;pointer-events:none}
+.course:hover::before{opacity:1}
+.course:hover{transform:translateY(-3px) scale(1.005);border-color:#f2d16b;box-shadow:0 12px 28px rgba(0,0,0,.65), 0 0 18px rgba(232,196,91,.22)}
+.course-icon{width:46px;height:46px;flex:none;display:grid;place-items:center;background:radial-gradient(circle,#52361c,#291a0d);border:1px solid #9b6a1e;border-radius:10px;font-size:22px;transition:transform .3s ease}
+.course:hover .course-icon{transform:rotate(-6deg) scale(1.08)}
+.course-info{flex:1;min-width:0}.course-info strong{font-size:16px}.course-info small{display:block;color:#b69a54;margin-top:4px}.tag{font-size:11px;color:#d4ae4b;border:1px solid #71521f;padding:2px 7px;border-radius:5px;margin-left:8px}.course-count{white-space:nowrap;color:#f2d25f;font-size:13px}.panel{padding:20px;margin:14px 0}.hidden{display:none!important}.back{margin:0 0 14px;color:#e8c45b;background:none;border:0;padding:8px 0}.panel h2{margin:0 0 6px;color:#f2d36c}.sub{color:#b9a56f;font-size:13px;margin:0 0 18px}.field{display:grid;gap:7px;margin:12px 0}.field label{font-size:13px;color:#d6b65c}.field input,.field textarea,.field select{width:100%;padding:12px;border-radius:9px;border:1px solid #75551f;background:#0d0b11;color:#f4e9c8;outline:none;transition:border-color .2s, box-shadow .2s}.field input:focus,.field textarea:focus,.field select:focus{border-color:#e8c45b;box-shadow:0 0 12px rgba(232,196,91,.25)}.field textarea{min-height:130px;resize:vertical;line-height:1.6}.btn.primary{background:linear-gradient(120deg,#9a6b20,#4d3516);color:#fff1bd}.btn.danger{border-color:#78433a;color:#f0b7a5}.row{display:flex;gap:10px;flex-wrap:wrap}.row>*{flex:1}.notice{padding:10px 12px;border:1px solid #78602c;border-radius:9px;color:#e9d28c;background:#241d16;margin:10px 0;font-size:13px}.question-card{padding:18px;margin:12px 0}.q-top{color:#c49d45;font-size:12px;margin-bottom:10px}.q-text{font-size:18px;line-height:1.8;color:#fff0c7}.option{display:flex;align-items:flex-start;gap:10px;border:1px solid #554126;background:#15111a;border-radius:9px;padding:11px;margin:8px 0;cursor:pointer;transition:all .2s ease}.option:hover{border-color:#9d7628;background:#1e1824}.option input{accent-color:#d8af48;margin-top:5px}.option:has(input:checked){border-color:#d8af48;background:#2b2118;box-shadow:0 0 12px rgba(216,175,72,.18)}.feedback{margin-top:12px;padding:12px;border-radius:9px;background:#211a13;border:1px solid #806126;line-height:1.7;animation:fadeSlideUp .35s ease}.login-shell{max-width:470px;margin:7vh auto}.login-shell .hero{min-height:170px}.muted{color:#ad9c72;font-size:12px}.footer{text-align:center;color:#816c43;font-size:11px;margin-top:35px}.mobile-nav{display:none}
+
+/* 霍格華茲貓頭鷹羊皮紙自訂彈窗 (取代 alert/confirm) */
+.owl-modal-backdrop{position:fixed;inset:0;z-index:50;background:rgba(6,4,9,.78);backdrop-filter:blur(6px);display:grid;place-items:center;padding:16px;animation:fadeSlideUp .25s ease}
+.owl-modal{max-width:420px;width:100%;background:linear-gradient(145deg,#241c2b,#110d16);border:2px solid #c7a342;border-radius:16px;padding:22px;box-shadow:0 18px 45px rgba(0,0,0,.85), 0 0 25px rgba(232,196,91,.3);text-align:center}
+.owl-modal-icon{font-size:38px;margin-bottom:8px;animation:floatSlow 3s infinite ease-in-out}
+.owl-modal h3{margin:0 0 10px;color:#f4d36e;font-size:19px;letter-spacing:1px}
+.owl-modal p{margin:0 0 18px;color:#f5e8bd;font-size:14px;line-height:1.65;white-space:pre-line}
+.owl-modal-actions{display:flex;gap:10px;justify-content:center}
+.owl-modal-actions .btn{min-width:105px}
+
 /* 平板與手機：觸控友善、避免橫向溢出 */
 button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,select{font-size:16px;max-width:100%}img,svg{max-width:100%}.panel,.question-card{min-width:0;overflow-wrap:anywhere}.course-info{overflow-wrap:anywhere}.course-count{flex:none}
 @media(min-width:701px) and (max-width:1024px){.wrap{max-width:900px;padding:20px 18px 90px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.hero{min-height:250px}}
@@ -33,6 +107,9 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 </style>
 </head>
 <body>
+<!-- 魔法大禮堂漂浮蠟燭與星塵畫布 -->
+<canvas id="magicCanvas"></canvas>
+
 <div class="wrap">
   <header class="topbar">
     <div class="brand"><div class="crest">🏰</div><div><h1>HOGWARTS</h1><small>私人魔法課程手冊</small></div></div>
@@ -105,14 +182,246 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 </div>
 <nav class="mobile-nav hidden" id="mobileNav"><button id="navHome"><b>📖</b>手冊</button><button id="navWrong"><b>📕</b>錯題本</button><button id="navAdmin"><b>🗝️</b>校長室</button><button id="navLogout"><b>🚪</b>離開</button></nav>
 
+<!-- 貓頭鷹羊皮紙彈窗 -->
+<div id="owlModalBackdrop" class="owl-modal-backdrop hidden">
+  <div class="owl-modal">
+    <div class="owl-modal-icon" id="owlModalIcon">🦉</div>
+    <h3 id="owlModalTitle">霍格華茲貓頭鷹信使</h3>
+    <p id="owlModalText"></p>
+    <div class="owl-modal-actions">
+      <button class="btn hidden" id="owlModalCancel">取消</button>
+      <button class="btn primary" id="owlModalOk">確認</button>
+    </div>
+  </div>
+</div>
+
 <script>
+// === 霍格華茲大禮堂：漂浮蠟燭 + 金色星塵 + 魔杖軌跡粒子系統 ===
+(function initGreatHallMagic(){
+  const canvas = document.getElementById('magicCanvas');
+  if(!canvas) return;
+  const ctx = canvas.getContext('2d');
+  let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2);
+  let candles = [], dust = [], sparks = [];
+
+  function resize(){
+    W = window.innerWidth;
+    H = window.innerHeight;
+    canvas.width = W * dpr;
+    canvas.height = H * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  window.addEventListener('resize', resize);
+  resize();
+
+  // 初始化大禮堂半空漂浮蠟燭（分遠近景深層次）
+  const candleCount = Math.max(14, Math.min(28, Math.floor(W / 55)));
+  for(let i = 0; i < candleCount; i++){
+    const depth = 0.45 + Math.random() * 0.75;
+    candles.push({
+      x: Math.random() * W,
+      y: Math.random() * (H * 0.72),
+      baseY: Math.random() * (H * 0.72),
+      depth,
+      w: 5 * depth,
+      h: (22 + Math.random() * 18) * depth,
+      phase: Math.random() * Math.PI * 2,
+      speed: 0.008 + Math.random() * 0.012,
+      driftX: (Math.random() - 0.5) * 0.12,
+      flickerPhase: Math.random() * Math.PI * 2
+    });
+  }
+
+  // 初始化緩緩上升的金色魔法星塵
+  const dustCount = Math.max(35, Math.min(75, Math.floor(W / 20)));
+  for(let i = 0; i < dustCount; i++){
+    dust.push({
+      x: Math.random() * W,
+      y: Math.random() * H,
+      r: 0.7 + Math.random() * 1.8,
+      vy: -(0.12 + Math.random() * 0.35),
+      vx: (Math.random() - 0.5) * 0.2,
+      alpha: Math.random(),
+      alphaSpeed: 0.008 + Math.random() * 0.015
+    });
+  }
+
+  // 滑鼠或觸控移動時的魔杖星光軌跡
+  function addSparks(x, y, count = 2){
+    for(let i = 0; i < count; i++){
+      sparks.push({
+        x: x + (Math.random() - 0.5) * 8,
+        y: y + (Math.random() - 0.5) * 8,
+        vx: (Math.random() - 0.5) * 1.4,
+        vy: (Math.random() - 0.5) * 1.4 - 0.3,
+        size: 1.2 + Math.random() * 2.2,
+        life: 1,
+        decay: 0.025 + Math.random() * 0.02
+      });
+    }
+    if(sparks.length > 90) sparks.splice(0, sparks.length - 90);
+  }
+
+  let lastSparkTime = 0;
+  window.addEventListener('pointermove', e => {
+    const now = performance.now();
+    if(now - lastSparkTime > 28){
+      addSparks(e.clientX, e.clientY, 2);
+      lastSparkTime = now;
+    }
+  }, {passive: true});
+
+  window.addEventListener('pointerdown', e => {
+    addSparks(e.clientX, e.clientY, 8);
+  }, {passive: true});
+
+  function drawCandle(c, t){
+    const floatY = c.baseY + Math.sin(t * c.speed + c.phase) * (10 * c.depth);
+    c.x += c.driftX;
+    if(c.x < -30) c.x = W + 30;
+    if(c.x > W + 30) c.x = -30;
+
+    const flicker = 0.88 + Math.sin(t * 0.14 + c.flickerPhase) * 0.08 + Math.cos(t * 0.23 + c.phase) * 0.05;
+    const glowRadius = 38 * c.depth * flicker;
+
+    // 1. 燭火溫暖金色光暈
+    const grad = ctx.createRadialGradient(c.x, floatY - 6 * c.depth, 0, c.x, floatY - 6 * c.depth, glowRadius);
+    grad.addColorStop(0, `rgba(255, 225, 130, ${0.42 * c.depth})`);
+    grad.addColorStop(0.45, `rgba(232, 175, 65, ${0.15 * c.depth})`);
+    grad.addColorStop(1, 'rgba(232, 175, 65, 0)');
+    ctx.fillStyle = grad;
+    ctx.beginPath();
+    ctx.arc(c.x, floatY - 6 * c.depth, glowRadius, 0, Math.PI * 2);
+    ctx.fill();
+
+    // 2. 象牙白蠟燭本體
+    const bodyGrad = ctx.createLinearGradient(c.x - c.w/2, floatY, c.x + c.w/2, floatY + c.h);
+    bodyGrad.addColorStop(0, `rgba(255, 246, 224, ${0.85 * c.depth})`);
+    bodyGrad.addColorStop(1, `rgba(195, 168, 120, ${0.35 * c.depth})`);
+    ctx.fillStyle = bodyGrad;
+    ctx.beginPath();
+    ctx.roundRect(c.x - c.w / 2, floatY, c.w, c.h, 2);
+    ctx.fill();
+
+    // 3. 燭芯與水滴狀搖曳火焰
+    const flameH = (11 * c.depth) * flicker;
+    const flameW = (3.6 * c.depth) * flicker;
+    const sway = Math.sin(t * 0.09 + c.phase) * (1.4 * c.depth);
+
+    ctx.fillStyle = 'rgba(255, 195, 75, 0.9)';
+    ctx.beginPath();
+    ctx.moveTo(c.x, floatY - 1);
+    ctx.quadraticCurveTo(c.x - flameW, floatY - flameH * 0.55, c.x + sway, floatY - flameH);
+    ctx.quadraticCurveTo(c.x + flameW, floatY - flameH * 0.55, c.x, floatY - 1);
+    ctx.fill();
+
+    // 火焰中心亮白核心
+    ctx.fillStyle = 'rgba(255, 253, 235, 0.95)';
+    ctx.beginPath();
+    ctx.arc(c.x + sway * 0.3, floatY - flameH * 0.35, flameW * 0.38, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  let tick = 0;
+  function animate(){
+    tick++;
+    ctx.clearRect(0, 0, W, H);
+
+    // 繪製飄浮星塵
+    for(const p of dust){
+      p.x += p.vx;
+      p.y += p.vy;
+      p.alpha += p.alphaSpeed;
+      if(p.alpha > 1 || p.alpha < 0.1) p.alphaSpeed *= -1;
+      if(p.y < -10){ p.y = H + 10; p.x = Math.random() * W; }
+      if(p.x < -10) p.x = W + 10;
+      if(p.x > W + 10) p.x = -10;
+
+      ctx.fillStyle = `rgba(245, 212, 115, ${Math.max(0.05, p.alpha * 0.65)})`;
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    // 繪製漂浮蠟燭
+    candles.forEach(c => drawCandle(c, tick));
+
+    // 繪製魔杖星光粒子
+    for(let i = sparks.length - 1; i >= 0; i--){
+      const s = sparks[i];
+      s.x += s.vx;
+      s.y += s.vy;
+      s.life -= s.decay;
+      if(s.life <= 0){ sparks.splice(i, 1); continue; }
+
+      ctx.save();
+      ctx.globalAlpha = s.life;
+      ctx.fillStyle = '#fff3c4';
+      ctx.shadowColor = '#e8c45b';
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.size * s.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    requestAnimationFrame(animate);
+  }
+  animate();
+})();
+
+// 課程卡片滑鼠聚光燈跟隨效果
+document.addEventListener('pointermove', e => {
+  const card = e.target.closest('.course');
+  if(!card) return;
+  const rect = card.getBoundingClientRect();
+  card.style.setProperty('--mx', (e.clientX - rect.left) + 'px');
+  card.style.setProperty('--my', (e.clientY - rect.top) + 'px');
+}, {passive: true});
+
+// 貓頭鷹羊皮紙自訂提示與確認框（取代原生 alert / confirm）
+function showOwlAlert(text, title = '霍格華茲魔法通知', icon = '🦉'){
+  return new Promise(resolve => {
+    const bd = document.getElementById('owlModalBackdrop');
+    document.getElementById('owlModalTitle').textContent = title;
+    document.getElementById('owlModalIcon').textContent = icon;
+    document.getElementById('owlModalText').textContent = text;
+    document.getElementById('owlModalCancel').classList.add('hidden');
+    bd.classList.remove('hidden');
+    const okBtn = document.getElementById('owlModalOk');
+    const cleanup = () => { bd.classList.add('hidden'); okBtn.onclick = null; resolve(); };
+    okBtn.onclick = cleanup;
+  });
+}
+
+function showOwlConfirm(text, title = '校長室確認', icon = '🗝️'){
+  return new Promise(resolve => {
+    const bd = document.getElementById('owlModalBackdrop');
+    document.getElementById('owlModalTitle').textContent = title;
+    document.getElementById('owlModalIcon').textContent = icon;
+    document.getElementById('owlModalText').textContent = text;
+    const cancelBtn = document.getElementById('owlModalCancel');
+    const okBtn = document.getElementById('owlModalOk');
+    cancelBtn.classList.remove('hidden');
+    bd.classList.remove('hidden');
+    const cleanup = (val) => {
+      bd.classList.add('hidden');
+      okBtn.onclick = null;
+      cancelBtn.onclick = null;
+      resolve(val);
+    };
+    okBtn.onclick = () => cleanup(true);
+    cancelBtn.onclick = () => cleanup(false);
+  });
+}
+
 const $ = id => document.getElementById(id);
 const today = new Date();
 $('today').textContent = today.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'});
 const hasConfig = window.SUPABASE_URL.startsWith('https://') && !window.SUPABASE_URL.includes('YOUR_PROJECT') && window.SUPABASE_ANON_KEY.length > 20 && !window.SUPABASE_ANON_KEY.includes('YOUR_');
 let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[], pubList=[], mastered=new Set(), wrongQs=[];
 const MATH_URL='https://script.google.com/macros/s/AKfycbzeIw7Jd8xMl42fa0wN8u5pHAQRfW67wW0C8SDOwuSzn1UqadSvRXr_NlKczcXTTwOsMg/exec';
-function isMath(c){return /數學|math/i.test((c.name||'')+' '+(c.tag||''))}
+function isMath(c){return /數學|數\s?[ABab甲乙]|數字占卜|math/i.test((c.name||'')+' '+(c.tag||'')+' '+(c.description||''))}
 if(hasConfig && window.supabase) sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
 function msg(id,text){$(id).textContent=text;$(id).classList.remove('hidden')}
@@ -140,7 +449,7 @@ async function loadData(){
   sb.from('hp_admins').select('user_id').eq('user_id',user.id).maybeSingle(),
   sb.from('hp_mastered').select('question_id').eq('user_id',user.id)
  ]);
- if(c.error){alert('讀取課程失敗：'+c.error.message);return}
+ if(c.error){await showOwlAlert('讀取課程失敗：'+c.error.message,'魔法卷軸讀取異常','⚠️');return}
  courses=c.data||[];attempts=a.data||[];isAdmin=!!adm.data;mastered=new Set((mst.data||[]).map(x=>x.question_id));
  $('adminShortcut').classList.toggle('hidden',!isAdmin);$('navAdmin').classList.toggle('hidden',!isAdmin);
  $('statCourses').textContent=courses.length;$('statDone').textContent=attempts.length;
@@ -163,7 +472,7 @@ async function refreshPublished(){
  pubList=data||[];
 }
 function renderCourses(){
- $('courseList').innerHTML=courses.map((c,i)=>`<button class="course" data-course="${c.id}"><div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count" style="text-align:right;line-height:1.5">${isMath(c)?'前往練習 ↗':progressText(c.id)+' →'}</span></button>`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
+ $('courseList').innerHTML=courses.map((c,i)=>`${isMath(c)?`<a class="course" style="animation-delay:${i*0.06}s;text-decoration:none" href="${MATH_URL}" target="_blank" rel="noopener">`:`<button class="course" style="animation-delay:${i*0.06}s" data-course="${c.id}">`}<div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count" style="text-align:right;line-height:1.5">${isMath(c)?'前往練習 ↗':progressText(c.id)+' →'}</span>${isMath(c)?'</a>':'</button>'}`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
  document.querySelectorAll('[data-course]').forEach(b=>b.onclick=()=>openCourse(b.dataset.course));
 }
 function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
@@ -174,10 +483,10 @@ function renderCourseManagement(){
 }
 async function archiveCourse(id){
  const course=courses.find(c=>c.id===id);if(!course||!isAdmin)return;
- if(!confirm(`確定要移除「${course.name}」嗎？\n課程會從學生首頁隱藏，但題目與作答紀錄會保留。`))return;
+ if(!(await showOwlConfirm(`確定要移除「${course.name}」嗎？\n課程會從學生首頁隱藏，但題目與作答紀錄會保留。`)))return;
  const {error}=await sb.from('hp_courses').update({is_archived:true}).eq('id',id);
- if(error){alert('移除失敗：'+error.message+'\n請確認已執行課程封存 SQL，且校長帳號有更新課程的權限。');return}
- await loadData();alert('課程已移除（封存），原有題目與成績紀錄已保留。');
+ if(error){await showOwlAlert('移除失敗：'+error.message+'\n請確認已執行課程封存 SQL，且校長帳號有更新課程的權限。','魔法封印失敗','⚠️');return}
+ await loadData();await showOwlAlert('課程已移除（封存），原有題目與成績紀錄已保留。','課程已封存','📜');
  }
 async function openCourse(id){
  currentCourse=courses.find(c=>c.id===id);if(!currentCourse)return;
@@ -198,9 +507,9 @@ async function openCourse(id){
 }
 async function submitAnswer(qid){
  const card=document.querySelector(`[data-q="${qid}"]`),selected=card.querySelector('input:checked');
- if(!selected){alert('請先選擇一個答案。');return}
+ if(!selected){await showOwlAlert('請先選擇一個答案，再施展確認咒語！','尚未選擇答案','🪄');return}
  const {data:result,error}=await sb.rpc('hp_submit_answer',{p_question_id:qid,p_selected_answer:selected.value});
- if(error){alert('儲存作答失敗：'+error.message);return}
+ if(error){await showOwlAlert('儲存作答失敗：'+error.message,'魔法紀錄異常','⚠️');return}
  const correct=!!result.is_correct;
  attempts.push({question_id:qid,is_correct:correct,created_at:new Date().toISOString()});
  card.querySelectorAll('input').forEach(x=>x.disabled=true);card.querySelector('.answer-btn').disabled=true;card.querySelector('.answer-btn').textContent='已完成';
@@ -260,7 +569,7 @@ $('publishCsv').onclick=async()=>{const file=$('csvFile').files[0];if(!file){msg
 $('refreshBank').onclick=loadQuestionBank;
 $('publishSelected').onclick=()=>updateSelectedQuestions(true);
 $('unpublishSelected').onclick=()=>updateSelectedQuestions(false);
-$('addCourse').onclick=async()=>{const name=$('newCourseName').value.trim();if(!name)return alert('請輸入課程名稱');const {error}=await sb.from('hp_courses').insert({name,tag:$('newCourseTag').value.trim(),description:$('newCourseDesc').value.trim(),sort_order:courses.length+1,is_archived:false});if(error){alert('新增失敗：'+error.message);return} $('newCourseName').value='';$('newCourseTag').value='';$('newCourseDesc').value='';await loadData();alert('課程已新增！')};
+$('addCourse').onclick=async()=>{const name=$('newCourseName').value.trim();if(!name)return showOwlAlert('請輸入課程名稱','缺少課程名稱','🪄');const {error}=await sb.from('hp_courses').insert({name,tag:$('newCourseTag').value.trim(),description:$('newCourseDesc').value.trim(),sort_order:courses.length+1,is_archived:false});if(error){await showOwlAlert('新增失敗：'+error.message,'新增課程失敗','⚠️');return} $('newCourseName').value='';$('newCourseTag').value='';$('newCourseDesc').value='';await loadData();await showOwlAlert('新課程已成功加入霍格華茲課表！','課程已建立','✨')};
 function wrongIds(){return [...new Set(attempts.filter(a=>!a.is_correct).map(a=>a.question_id))].filter(id=>!mastered.has(id))}
 function updateWrongBadge(){const n=wrongIds().length;$('tabWrong').textContent='📕 錯題本'+(n?` (${n})`:'')}
 async function openWrong(){
@@ -287,9 +596,9 @@ function renderWrong(){
 }
 async function checkWrong(qid,btn){
  const card=document.querySelector(`[data-w="${qid}"]`),sel=card.querySelector('input:checked'),fb=$('wfeedback_'+qid);
- if(!sel){alert('請先選擇一個答案。');return}
+ if(!sel){await showOwlAlert('請先選擇一個答案。','尚未選擇答案','🪄');return}
  const {data:r,error}=await sb.rpc('hp_check_answer',{p_question_id:qid,p_selected_answer:sel.value});
- if(error){alert('檢查失敗：'+error.message+'\n請確認已執行錯題本的 SQL。');return}
+ if(error){await showOwlAlert('檢查失敗：'+error.message+'\n請確認已執行錯題本的 SQL。','魔法檢查異常','⚠️');return}
  fb.classList.remove('hidden');
  if(!r.is_correct){
   fb.innerHTML='<b>📖 還不對，再想想看！</b><br>換一個選項再試一次。';
