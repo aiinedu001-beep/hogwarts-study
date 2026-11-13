@@ -9,7 +9,7 @@
 <script>
   // 先到下方設定區填入 Supabase URL 與 Publishable/anon key
   window.SUPABASE_URL = "https://ygtpjubnqruluvtbqgtw.supabase.co";
-  window.SUPABASE_ANON_KEY = "sb_publishable_9q4B8u3Y4Quaejstb6Q1Yg_2oCKlbz_";
+  window.SUPABASE_ANON_KEY = "YOUR_SUPABASE_PUBLISHABLE_OR_ANON_KEY";
 </script>
 <script>
   window.MathJax = {
@@ -74,6 +74,12 @@ button,input,textarea,select{font:inherit}button{cursor:pointer}.wrap{position:r
         <div class="row"><button class="btn primary" id="publishText">發布文字題目</button><button class="btn" id="publishCsv">上傳 CSV 題目</button></div>
         <div id="adminMsg" class="notice hidden"></div>
       </div>
+      <div class="panel">
+        <h2>🗃️ 題庫管理・選擇後再發布</h2>
+        <p class="sub">上傳的題目先存入私人題庫，不會立刻出現在學生端。勾選要給學生練習的題目，再按發布。</p>
+        <div class="row"><button class="btn" id="refreshBank">重新整理題庫</button><button class="btn primary" id="publishSelected">發布勾選題目</button><button class="btn danger" id="unpublishSelected">收回勾選題目</button></div>
+        <div id="bankMsg" class="notice hidden"></div><div id="questionBank"><p class="muted">載入題庫中⋯</p></div>
+      </div>
       <div class="panel"><h2>📚 課程管理</h2><p class="sub">新增課程後，學生首頁會自動顯示。</p><div class="row"><div class="field"><label>課程名稱</label><input id="newCourseName" placeholder="例如：數學 A"></div><div class="field"><label>課程分類</label><input id="newCourseTag" placeholder="例如：數學"></div></div><div class="field"><label>課程簡介</label><input id="newCourseDesc" placeholder="課程說明（可留空）"></div><button class="btn" id="addCourse">新增課程</button></div>
     </section>
   </main>
@@ -131,7 +137,7 @@ async function openCourse(id){
  currentCourse=courses.find(c=>c.id===id);if(!currentCourse)return;
  $('courseTitle').textContent=currentCourse.name;$('courseDesc').textContent=currentCourse.description||'專心研習，讓知識成為你的魔法。';
  $('questionList').innerHTML='<p class="muted">正在從校長室的題庫取出題目⋯</p>';showOnly('courseView');
- const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order').eq('course_id',id).order('sort_order');
+ const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order').eq('course_id',id).eq('is_published',true).order('sort_order');
  if(error){$('questionList').textContent='讀取題目失敗：'+error.message;return}
  if(!data.length){$('questionList').innerHTML='<div class="notice">這門課程目前還沒有題目，請等待校長發布。</div>';return}
  const done=new Set(attempts.map(a=>a.question_id));
@@ -166,20 +172,39 @@ function parseCSV(text){
 function rowToQuestion(r){return {question_text:r[0]||'',option_a:r[1]||'',option_b:r[2]||'',option_c:r[3]||'',option_d:r[4]||'',answer:(r[5]||'').trim().toUpperCase(),explanation:r[6]||''}}
 async function publishRows(rows){
  const courseId=$('adminCourse').value;if(!courseId){msg('adminMsg','請先建立或選擇一門課程。');return}
- const clean=rows.filter(r=>r.question_text&&['A','B','C','D'].includes(r.answer)).map((r,i)=>({...r,course_id:courseId,sort_order:i+1,created_by:user.id}));
+ const clean=rows.filter(r=>r.question_text&&['A','B','C','D'].includes(r.answer)).map((r,i)=>({...r,course_id:courseId,sort_order:i+1,created_by:user.id,is_published:false}));
  if(!clean.length){msg('adminMsg','沒有可發布的有效題目。請確認每題都有題幹與 A/B/C/D 答案。');return}
  const {error}=await sb.from('hp_questions').insert(clean);
  if(error){msg('adminMsg','發布失敗：'+error.message);return}
- msg('adminMsg',`成功發布 ${clean.length} 題！`);$('bulkText').value='';$('csvFile').value='';
+ msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);$('bulkText').value='';$('csvFile').value='';await loadQuestionBank();
 }
+
+async function loadQuestionBank(){
+ const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order,is_published').order('created_at',{ascending:false});
+ if(error){msg('bankMsg','讀取題庫失敗：'+error.message);return}
+ if(!data.length){$('questionBank').innerHTML='<div class="notice">目前題庫是空的。上傳題目後會先保存在這裡。</div>';return}
+ $('questionBank').innerHTML=data.map(q=>{const c=courses.find(x=>x.id===q.course_id);return `<label class="option" style="align-items:flex-start"><input type="checkbox" class="bank-check" value="${q.id}"><span style="flex:1"><b>${escapeHtml(c?.name||'未分類課程')}</b><span class="tag">${q.is_published?'已發布':'草稿／未發布'}</span><div style="margin-top:5px">${escapeHtml(q.question_text)}</div><small class="muted">題目 ID：${q.id.slice(0,8)}</small></span></label>`}).join('');
+}
+async function updateSelectedQuestions(published){
+ const ids=[...document.querySelectorAll('.bank-check:checked')].map(x=>x.value);
+ if(!ids.length){msg('bankMsg','請先勾選要操作的題目。');return}
+ const {error}=await sb.from('hp_questions').update({is_published:published}).in('id',ids);
+ if(error){msg('bankMsg','更新失敗：'+error.message);return}
+ msg('bankMsg',published?`已發布 ${ids.length} 題，學生現在可以看到。`:`已收回 ${ids.length} 題，學生將不再看到。`);
+ await loadQuestionBank();
+}
+
 $('loginBtn').onclick=async()=>{if(!sb){init();return}const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)authNotice(error.message)};
 $('signupBtn').onclick=async()=>{if(!sb){init();return}const {error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});if(error)authNotice(error.message);else authNotice('帳號建立成功！若 Supabase 要求信箱驗證，請先到信箱完成驗證。')};
 $('logoutBtn').onclick=async()=>sb.auth.signOut();
 $('navLogout').onclick=async()=>sb.auth.signOut();
 $('backHome').onclick=()=>showOnly('homeView');$('backAdminHome').onclick=()=>showOnly('homeView');
-$('openAdmin').onclick=()=>{if(!isAdmin)return;showOnly('adminView')};$('navAdmin').onclick=()=>{if(isAdmin)showOnly('adminView')};$('navHome').onclick=()=>showOnly('homeView');
+$('openAdmin').onclick=()=>{if(!isAdmin)return;showOnly('adminView');loadQuestionBank()};$('navAdmin').onclick=()=>{if(isAdmin){showOnly('adminView');loadQuestionBank()}};$('navHome').onclick=()=>showOnly('homeView');
 $('publishText').onclick=()=>{const rows=$('bulkText').value.split(/\r?\n/).filter(x=>x.trim()).map(x=>x.split('|').map(y=>y.trim())).map(rowToQuestion);publishRows(rows)};
 $('publishCsv').onclick=async()=>{const file=$('csvFile').files[0];if(!file){msg('adminMsg','請先選擇 CSV 檔案。');return}const rows=parseCSV(await file.text());const data=rows.slice(1).map(rowToQuestion);publishRows(data)};
+$('refreshBank').onclick=loadQuestionBank;
+$('publishSelected').onclick=()=>updateSelectedQuestions(true);
+$('unpublishSelected').onclick=()=>updateSelectedQuestions(false);
 $('addCourse').onclick=async()=>{const name=$('newCourseName').value.trim();if(!name)return alert('請輸入課程名稱');const {error}=await sb.from('hp_courses').insert({name,tag:$('newCourseTag').value.trim(),description:$('newCourseDesc').value.trim(),sort_order:courses.length+1});if(error){alert('新增失敗：'+error.message);return} $('newCourseName').value='';$('newCourseTag').value='';$('newCourseDesc').value='';await loadData();alert('課程已新增！')};
 init();
 </script>
