@@ -73,11 +73,8 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
       <button class="back" id="backAdminHome">← 返回大廳</button>
       <div class="panel">
         <h2>🗝️ 校長室・發布新題目</h2><p class="sub">支援逐題文字貼上或 CSV 檔案。題幹、選項、答案與解析皆可使用 LaTeX。</p>
-        <div class="field"><label>科目</label><select id="adminCourse"></select></div>
-	<div class="field"><label>題目</label><textarea id="mqQuestion" style="min-height:90px" placeholder="例如：若 $f(x)=x^2$，則 $f'(x)$ 為何？"></textarea></div>
-	<div class="field"><label>選項（以空格分隔，最多 4 個，依序為 A、B、C、D）</label><input id="mqOptions" placeholder="例如：$x$ $2x$ $x^2$ $2$"><small class="muted">	LaTeX 算式中間有空格時，請用 $...$ 包起來，例如 $x + 1$ 會視為同一個選項。</small></div>
-	<div class="field"><label>正確答案</label><select id="mqAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
-	<div class="field"><label>解析</label><textarea id="mqExplanation" style="min-height:90px" placeholder="例如：使用冪次微分法則"></textarea></div>10;若 $f(x)=x^2$，則 $f'(x)$ 為何？|$x$|$2x$|$x^2$|$2$|B|使用冪次微分法則"></textarea></div>
+        <div class="field"><label>發布到課程</label><select id="adminCourse"></select></div>
+        <div class="field"><label>快速貼上（每一行一題，欄位以 | 分隔）</label><textarea id="bulkText" placeholder="題目文字|選項A|選項B|選項C|選項D|正確答案(A/B/C/D)|解析&#10;若 $f(x)=x^2$，則 $f'(x)$ 為何？|$x$|$2x$|$x^2$|$2$|B|使用冪次微分法則"></textarea></div>
         <div class="field"><label>或選擇 CSV 檔（欄位：question,option_a,option_b,option_c,option_d,answer,explanation）</label><input type="file" id="csvFile" accept=".csv,text/csv"></div>
         <div class="row"><button class="btn primary" id="publishText">發布文字題目</button><button class="btn" id="publishCsv">上傳 CSV 題目</button></div>
         <div id="adminMsg" class="notice hidden"></div>
@@ -196,7 +193,7 @@ async function publishRows(rows){
  if(!clean.length){msg('adminMsg','沒有可發布的有效題目。請確認每題都有題幹與 A/B/C/D 答案。');return}
  const {error}=await sb.from('hp_questions').insert(clean);
  if(error){msg('adminMsg','發布失敗：'+error.message);return}
- msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);['mqQuestion','mqOptions','mqExplanation'].forEach(id=>$(id).value='');$('csvFile').value='';await loadQuestionBank();
+ msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);$('bulkText').value='';$('csvFile').value='';await loadQuestionBank();
 }
 
 async function loadQuestionBank(){
@@ -220,22 +217,7 @@ $('logoutBtn').onclick=async()=>sb.auth.signOut();
 $('navLogout').onclick=async()=>sb.auth.signOut();
 $('backHome').onclick=()=>showOnly('homeView');$('backAdminHome').onclick=()=>showOnly('homeView');
 $('openAdmin').onclick=()=>{if(!isAdmin)return;showOnly('adminView');loadQuestionBank()};$('navAdmin').onclick=()=>{if(isAdmin){showOnly('adminView');loadQuestionBank()}};$('navHome').onclick=()=>showOnly('homeView');
-function splitOptions(s){
- const out=[];let cur='',inMath=false;
- for(const ch of s.trim()){
-  if(ch==='$')inMath=!inMath;
-  if(/\s/.test(ch)&&!inMath){if(cur){out.push(cur);cur=''}}else cur+=ch;
- }
- if(cur)out.push(cur);return out;
-}
-$('publishText').onclick=()=>{
- const q=$('mqQuestion').value.trim(),opts=splitOptions($('mqOptions').value),ans=$('mqAnswer').value,exp=$('mqExplanation').value.trim();
- if(!q){msg('adminMsg','請輸入題目。');return}
- if(opts.length<2){msg('adminMsg','請至少輸入 2 個選項（以空格分隔）。');return}
- if(opts.length>4){msg('adminMsg','最多只能有 4 個選項，目前偵測到 '+opts.length+' 個。若選項內含空格，請用 $...$ 包起來。');return}
- if(ans.charCodeAt(0)-65>=opts.length){msg('adminMsg','正確答案 '+ans+' 超出目前的選項數量。');return}
- publishRows([rowToQuestion([q,opts[0],opts[1]||'',opts[2]||'',opts[3]||'',ans,exp])]);
-};
+$('publishText').onclick=()=>{const rows=$('bulkText').value.split(/\r?\n/).filter(x=>x.trim()).map(x=>x.split('|').map(y=>y.trim())).map(rowToQuestion);publishRows(rows)};
 $('publishCsv').onclick=async()=>{const file=$('csvFile').files[0];if(!file){msg('adminMsg','請先選擇 CSV 檔案。');return}const rows=parseCSV(await file.text());const data=rows.slice(1).map(rowToQuestion);publishRows(data)};
 $('refreshBank').onclick=loadQuestionBank;
 $('publishSelected').onclick=()=>updateSelectedQuestions(true);
