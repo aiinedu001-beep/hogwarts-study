@@ -29,6 +29,7 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 @media(max-width:700px){body{background-attachment:scroll}.wrap{width:100%;padding:12px 12px calc(92px + env(safe-area-inset-bottom))}.topbar{gap:8px;align-items:center}.brand{gap:8px;min-width:0}.brand h1{font-size:16px;letter-spacing:1px}.brand small{font-size:10px;letter-spacing:1px}.top-actions{gap:5px}.pill{padding:8px 10px;font-size:12px}.hero{min-height:225px;padding:26px 15px}.hero-crest{width:72px;height:72px;font-size:36px}.hero p{font-size:13px}.stats{grid-template-columns:repeat(2,minmax(0,1fr))}.stat{min-width:0;gap:8px}.stat-icon{width:35px;height:35px;font-size:18px}.section-head{gap:8px;align-items:flex-start}.section-head h3{font-size:16px}.section-head span{font-size:9px;white-space:nowrap}.course{gap:9px;padding:11px}.course-icon{width:38px;height:38px;font-size:19px}.course-info strong{font-size:14px}.course-info small{font-size:11px}.course-count{font-size:11px}.panel{padding:14px;margin:11px 0}.panel h2{font-size:19px}.sub{font-size:12px}.row{display:grid;grid-template-columns:1fr;gap:7px}.row>*{width:100%;min-width:0}.row .btn{width:100%}.field{min-width:0}.field input,.field textarea,.field select{padding:12px}.question-card{padding:13px}.q-text{font-size:16px}.option{padding:12px;line-height:1.55}.mobile-nav{padding:8px 4px calc(8px + env(safe-area-inset-bottom));min-height:60px}.mobile-nav button{min-width:64px;min-height:44px}.login-shell{margin:2vh auto}.login-shell .hero{min-height:155px}}
 @media(max-width:380px){.brand h1{font-size:14px}.brand small{font-size:9px}.crest{width:38px;height:38px;font-size:21px}.top-actions .pill{font-size:11px;padding:7px 8px}.stats{gap:7px}.stat{padding:9px}.stat strong{font-size:16px}}
 @media(max-width:700px){.wrap{padding:14px 12px 95px}.topbar{align-items:flex-start}.brand h1{font-size:17px}.crest{width:45px;height:45px}.stats{grid-template-columns:repeat(2,1fr);gap:9px}.stat{padding:11px}.stat strong{font-size:18px}.hero{min-height:255px}.course{padding:12px}.course-count{font-size:12px}.mobile-nav{display:flex;position:fixed;z-index:5;bottom:0;left:0;right:0;justify-content:space-around;background:#080609f2;border-top:1px solid #70521e;padding:9px 4px calc(9px + env(safe-area-inset-bottom));backdrop-filter:blur(10px)}.mobile-nav button{border:0;background:none;color:#c7a74e;font-size:11px;display:grid;gap:3px;justify-items:center}.mobile-nav b{font-size:19px}.top-actions .date{display:none}}
+.tabs{display:flex;gap:10px;margin:0 0 14px}.tabs .btn{flex:1}
 </style>
 </head>
 <body>
@@ -51,6 +52,7 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
   </section>
 
   <main id="appView" class="hidden">
+    <div class="tabs" id="tabs"><button class="btn primary" id="tabHome">📖 課程</button><button class="btn" id="tabWrong">📕 錯題本</button></div>
     <section id="homeView">
       <div class="hero"><div class="hero-content"><div class="hero-crest">🦉</div><div class="motto">DRACO DORMIENS NUNQUAM TITILLANDUS</div><h2 id="welcome">歡迎回到霍格華茲！</h2><p>今日的知識，就是明日的魔法。</p><p id="quote">「每一道難題，都藏著等待被發現的線索。」</p></div></div>
       <div class="stats">
@@ -67,6 +69,14 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
     <section id="courseView" class="hidden">
       <button class="back" id="backHome">← 返回大廳</button>
       <div class="panel"><h2 id="courseTitle">課程</h2><p id="courseDesc" class="sub"></p><div id="questionList"></div></div>
+    </section>
+
+    <section id="wrongView" class="hidden">
+      <div class="panel">
+        <h2>📕 錯題本</h2><p class="sub">答錯的題目會收進這裡。重新作答並答對後，就會移出錯題本。</p>
+        <div class="field"><label>課程篩選</label><select id="wrongFilter"></select></div>
+        <div id="wrongList"></div>
+      </div>
     </section>
 
     <section id="adminView" class="hidden">
@@ -93,19 +103,21 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
   </main>
   <div class="footer">HOGWARTS PRIVATE STUDY • A LITTLE MAGIC EVERY DAY</div>
 </div>
-<nav class="mobile-nav hidden" id="mobileNav"><button id="navHome"><b>📖</b>手冊</button><button id="navAdmin"><b>🗝️</b>校長室</button><button id="navLogout"><b>🚪</b>離開</button></nav>
+<nav class="mobile-nav hidden" id="mobileNav"><button id="navHome"><b>📖</b>手冊</button><button id="navWrong"><b>📕</b>錯題本</button><button id="navAdmin"><b>🗝️</b>校長室</button><button id="navLogout"><b>🚪</b>離開</button></nav>
 
 <script>
 const $ = id => document.getElementById(id);
 const today = new Date();
 $('today').textContent = today.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'});
 const hasConfig = window.SUPABASE_URL.startsWith('https://') && !window.SUPABASE_URL.includes('YOUR_PROJECT') && window.SUPABASE_ANON_KEY.length > 20 && !window.SUPABASE_ANON_KEY.includes('YOUR_');
-let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[], pubList=[];
+let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[], pubList=[], mastered=new Set(), wrongQs=[];
+const MATH_URL='https://script.google.com/macros/s/AKfycbzeIw7Jd8xMl42fa0wN8u5pHAQRfW67wW0C8SDOwuSzn1UqadSvRXr_NlKczcXTTwOsMg/exec';
+function isMath(c){return /數學|math/i.test((c.name||'')+' '+(c.tag||''))}
 if(hasConfig && window.supabase) sb=window.supabase.createClient(window.SUPABASE_URL,window.SUPABASE_ANON_KEY);
 
 function msg(id,text){$(id).textContent=text;$(id).classList.remove('hidden')}
 function hide(id){$(id).classList.add('hidden')}
-function showOnly(id){['homeView','courseView','adminView'].forEach(x=>$(x).classList.toggle('hidden',x!==id))}
+function showOnly(id){['homeView','courseView','adminView','wrongView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('tabs').classList.toggle('hidden',id==='adminView');$('tabHome').classList.toggle('primary',id!=='wrongView');$('tabWrong').classList.toggle('primary',id==='wrongView')}
 function authNotice(t){msg('authMsg',t)}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 function renderMath(el){if(window.MathJax?.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{});}
@@ -122,19 +134,20 @@ async function enterApp(){
  await loadData();showOnly('homeView');
 }
 async function loadData(){
- const [c,a,adm]=await Promise.all([
+ const [c,a,adm,mst]=await Promise.all([
   sb.from('hp_courses').select('*').eq('is_archived',false).order('sort_order'),
   sb.from('hp_attempts').select('question_id,is_correct,created_at').eq('user_id',user.id),
-  sb.from('hp_admins').select('user_id').eq('user_id',user.id).maybeSingle()
+  sb.from('hp_admins').select('user_id').eq('user_id',user.id).maybeSingle(),
+  sb.from('hp_mastered').select('question_id').eq('user_id',user.id)
  ]);
  if(c.error){alert('讀取課程失敗：'+c.error.message);return}
- courses=c.data||[];attempts=a.data||[];isAdmin=!!adm.data;
+ courses=c.data||[];attempts=a.data||[];isAdmin=!!adm.data;mastered=new Set((mst.data||[]).map(x=>x.question_id));
  $('adminShortcut').classList.toggle('hidden',!isAdmin);$('navAdmin').classList.toggle('hidden',!isAdmin);
  $('statCourses').textContent=courses.length;$('statDone').textContent=attempts.length;
  const correct=attempts.filter(x=>x.is_correct).length;
  $('statRate').textContent=attempts.length?Math.round(correct/attempts.length*100)+'%':'0%';
  $('statPoints').textContent=(correct*10)+' PTS';
- await refreshPublished();
+ await refreshPublished();updateWrongBadge();
  renderCourses();populateAdminCourses();renderCourseManagement();
 }
 function dayKey(d){const x=new Date(d);return x.getFullYear()+'-'+(x.getMonth()+1)+'-'+x.getDate()}
@@ -149,37 +162,11 @@ async function refreshPublished(){
  const {data}=await sb.from('hp_questions').select('id,course_id,published_at').eq('is_published',true);
  pubList=data||[];
 }
-// 數學課程的外部網站
-const MATH_WEBSITE = "https://script.google.com/macros/s/AKfycbzeIw7Jd8xMl42fa0wN8u5pHAQRfW67wW0C8SDOwuSzn1UqadSvRXr_NlKczcXTTwOsMg/exec";
-
 function renderCourses(){
-  $('courseList').innerHTML=courses.map((c,i)=>`
-    <button class="course" data-course="${c.id}">
-      <div class="course-icon">
-        ${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}
-      </div>
-      <div class="course-info">
-        <strong>${escapeHtml(c.name)}</strong>
-        <small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small>
-      </div>
-      <span class="course-count">
-        ${progressText(c.id)} →
-      </span>
-    </button>
-  `).join('') || '<div class="notice">目前還沒有課程</div>';
-
-  document.querySelectorAll('[data-course]').forEach(b=>{
-    b.onclick=()=>{
-      const course=courses.find(c=>c.id===b.dataset.course);
-
-      if(course && course.name.includes('數學')){
-        window.open(MATH_WEBSITE,'_blank','noopener');
-      }else{
-        openCourse(b.dataset.course);
-      }
-    };
-  });
-}function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
+ $('courseList').innerHTML=courses.map((c,i)=>`<button class="course" data-course="${c.id}"><div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count" style="text-align:right;line-height:1.5">${isMath(c)?'前往練習 ↗':progressText(c.id)+' →'}</span></button>`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
+ document.querySelectorAll('[data-course]').forEach(b=>b.onclick=()=>openCourse(b.dataset.course));
+}
+function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
 function renderCourseManagement(){
  const el=$('courseManagementList');if(!el)return;
  el.innerHTML=courses.map(c=>`<div class="option course-manage-row" style="align-items:center;justify-content:space-between"><span style="flex:1;min-width:0"><b>${escapeHtml(c.name)}</b><small class="muted" style="display:block">${escapeHtml(c.description||c.tag||'未填寫簡介')}</small></span><button class="btn danger archive-course" data-course-id="${c.id}" type="button">移除課程</button></div>`).join('')||'<div class="notice">目前沒有可管理的課程。</div>';
@@ -194,6 +181,7 @@ async function archiveCourse(id){
  }
 async function openCourse(id){
  currentCourse=courses.find(c=>c.id===id);if(!currentCourse)return;
+ if(isMath(currentCourse)){window.open(MATH_URL,'_blank','noopener');return}
  $('courseTitle').textContent=currentCourse.name;$('courseDesc').textContent=currentCourse.description||'專心研習，讓知識成為你的魔法。';
  $('questionList').innerHTML='<p class="muted">正在從校長室的題庫取出題目⋯</p>';showOnly('courseView');
  const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order').eq('course_id',id).eq('is_published',true).order('sort_order');
@@ -217,7 +205,7 @@ async function submitAnswer(qid){
  attempts.push({question_id:qid,is_correct:correct,created_at:new Date().toISOString()});
  card.querySelectorAll('input').forEach(x=>x.disabled=true);card.querySelector('.answer-btn').disabled=true;card.querySelector('.answer-btn').textContent='已完成';
  const fb=$('feedback_'+qid);fb.classList.remove('hidden');fb.innerHTML=`<b>${correct?'✨ 答對了！':'📖 再複習一次！'}</b><br>正確答案：${escapeHtml(result.correct_answer)}<br>${escapeHtml(result.explanation||'校長尚未提供解析。')}`;
- renderMath(fb);await refreshStats();renderCourses();
+ renderMath(fb);await refreshStats();renderCourses();updateWrongBadge();
 }
 async function refreshStats(){
  const correct=attempts.filter(a=>a.is_correct).length;
@@ -273,6 +261,51 @@ $('refreshBank').onclick=loadQuestionBank;
 $('publishSelected').onclick=()=>updateSelectedQuestions(true);
 $('unpublishSelected').onclick=()=>updateSelectedQuestions(false);
 $('addCourse').onclick=async()=>{const name=$('newCourseName').value.trim();if(!name)return alert('請輸入課程名稱');const {error}=await sb.from('hp_courses').insert({name,tag:$('newCourseTag').value.trim(),description:$('newCourseDesc').value.trim(),sort_order:courses.length+1,is_archived:false});if(error){alert('新增失敗：'+error.message);return} $('newCourseName').value='';$('newCourseTag').value='';$('newCourseDesc').value='';await loadData();alert('課程已新增！')};
+function wrongIds(){return [...new Set(attempts.filter(a=>!a.is_correct).map(a=>a.question_id))].filter(id=>!mastered.has(id))}
+function updateWrongBadge(){const n=wrongIds().length;$('tabWrong').textContent='📕 錯題本'+(n?` (${n})`:'')}
+async function openWrong(){
+ showOnly('wrongView');
+ $('wrongFilter').innerHTML='<option value="">全部課程</option>'+courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+ const ids=wrongIds(),box=$('wrongList');
+ if(!ids.length){wrongQs=[];renderWrong();return}
+ box.innerHTML='<p class="muted">正在翻開錯題本⋯</p>';
+ const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d').in('id',ids);
+ if(error){box.innerHTML='<div class="notice">讀取錯題失敗：'+escapeHtml(error.message)+'</div>';return}
+ wrongQs=data||[];renderWrong();
+}
+function renderWrong(){
+ const f=$('wrongFilter').value,box=$('wrongList');
+ const list=wrongQs.filter(q=>!mastered.has(q.id)&&(!f||q.course_id===f));
+ if(!list.length){box.innerHTML='<div class="notice">目前沒有待複習的錯題，太棒了！</div>';return}
+ box.innerHTML=list.map((q,i)=>{
+  const c=courses.find(x=>x.id===q.course_id);
+  const opts=[['A',q.option_a],['B',q.option_b],['C',q.option_c],['D',q.option_d]].filter(x=>x[1]);
+  return `<article class="question-card" data-w="${q.id}"><div class="q-top">${escapeHtml(c?.name||'')}・第 ${i+1} 題</div><div class="q-text">${escapeHtml(q.question_text)}</div><div class="options">${opts.map(([k,v])=>`<label class="option"><input type="radio" name="w_${q.id}" value="${k}"><span><b>${k}.</b> ${escapeHtml(v)}</span></label>`).join('')}</div><button class="btn primary" data-check="${q.id}">檢查答案</button><div class="feedback hidden" id="wfeedback_${q.id}"></div></article>`;
+ }).join('');
+ renderMath(box);
+ box.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>checkWrong(b.dataset.check,b));
+}
+async function checkWrong(qid,btn){
+ const card=document.querySelector(`[data-w="${qid}"]`),sel=card.querySelector('input:checked'),fb=$('wfeedback_'+qid);
+ if(!sel){alert('請先選擇一個答案。');return}
+ const {data:r,error}=await sb.rpc('hp_check_answer',{p_question_id:qid,p_selected_answer:sel.value});
+ if(error){alert('檢查失敗：'+error.message+'\n請確認已執行錯題本的 SQL。');return}
+ fb.classList.remove('hidden');
+ if(!r.is_correct){
+  fb.innerHTML='<b>📖 還不對，再想想看！</b><br>換一個選項再試一次。';
+  card.querySelectorAll('input').forEach(x=>x.checked=false);return;
+ }
+ card.querySelectorAll('input').forEach(x=>x.disabled=true);btn.disabled=true;btn.textContent='已完成';
+ let note='這題已移出錯題本。';
+ const {error:e2}=await sb.from('hp_mastered').insert({user_id:user.id,question_id:qid});
+ if(!e2||e2.code==='23505'){mastered.add(qid);updateWrongBadge()}else{note='（尚未建立錯題本資料表，這題暫時還會留在錯題本）'}
+ fb.innerHTML=`<b>✨ 答對了！</b><br>正確答案：${escapeHtml(r.correct_answer)}<br>${escapeHtml(r.explanation||'')}<br><span class="muted">${note}</span>`;
+ renderMath(fb);
+}
+$('tabHome').onclick=()=>showOnly('homeView');
+$('tabWrong').onclick=openWrong;$('navWrong').onclick=openWrong;
+$('wrongFilter').onchange=renderWrong;
+
 init();
 </script>
 </body>
