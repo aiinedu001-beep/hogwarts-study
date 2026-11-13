@@ -149,11 +149,37 @@ async function refreshPublished(){
  const {data}=await sb.from('hp_questions').select('id,course_id,published_at').eq('is_published',true);
  pubList=data||[];
 }
+// 數學課程的外部網站
+const MATH_WEBSITE = "https://你的數學網站網址";
+
 function renderCourses(){
- $('courseList').innerHTML=courses.map((c,i)=>`<button class="course" data-course="${c.id}"><div class="course-icon">${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}</div><div class="course-info"><strong>${escapeHtml(c.name)}</strong><small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small></div><span class="course-count" style="text-align:right;line-height:1.5">${progressText(c.id)} →</span></button>`).join('')||'<div class="notice">目前還沒有課程，請由校長室新增。</div>';
- document.querySelectorAll('[data-course]').forEach(b=>b.onclick=()=>openCourse(b.dataset.course));
-}
-function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
+  $('courseList').innerHTML=courses.map((c,i)=>`
+    <button class="course" data-course="${c.id}">
+      <div class="course-icon">
+        ${['📜','🔢','📖','🧪','🌿','🌌','🪄'][i%7]}
+      </div>
+      <div class="course-info">
+        <strong>${escapeHtml(c.name)}</strong>
+        <small>${escapeHtml(c.description||'授課教授：霍格華茲教授')}</small>
+      </div>
+      <span class="course-count">
+        ${progressText(c.id)} →
+      </span>
+    </button>
+  `).join('') || '<div class="notice">目前還沒有課程</div>';
+
+  document.querySelectorAll('[data-course]').forEach(b=>{
+    b.onclick=()=>{
+      const course=courses.find(c=>c.id===b.dataset.course);
+
+      if(course && course.name.includes('數學')){
+        window.open(MATH_WEBSITE,'_blank','noopener');
+      }else{
+        openCourse(b.dataset.course);
+      }
+    };
+  });
+}function populateAdminCourses(){$('adminCourse').innerHTML=courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('')||'<option value="">請先新增課程</option>'}
 function renderCourseManagement(){
  const el=$('courseManagementList');if(!el)return;
  el.innerHTML=courses.map(c=>`<div class="option course-manage-row" style="align-items:center;justify-content:space-between"><span style="flex:1;min-width:0"><b>${escapeHtml(c.name)}</b><small class="muted" style="display:block">${escapeHtml(c.description||c.tag||'未填寫簡介')}</small></span><button class="btn danger archive-course" data-course-id="${c.id}" type="button">移除課程</button></div>`).join('')||'<div class="notice">目前沒有可管理的課程。</div>';
