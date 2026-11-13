@@ -172,7 +172,7 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
       <div class="panel">
         <h2>🗃️ 題庫管理・選擇後再發布</h2>
         <p class="sub">上傳的題目先存入私人題庫，不會立刻出現在學生端。勾選要給學生練習的題目，再按發布。</p>
-        <div class="row"><button class="btn" id="refreshBank">重新整理題庫</button><button class="btn primary" id="publishSelected">發布勾選題目</button><button class="btn danger" id="unpublishSelected">收回勾選題目</button></div>
+        <div class="row"><button class="btn" id="refreshBank">重新整理題庫</button><button class="btn primary" id="publishSelected">發布勾選題目</button><button class="btn danger" id="unpublishSelected">收回勾選題目</button><button class="btn danger" id="deleteSelected">刪除勾選題目</button></div>
         <div id="bankMsg" class="notice hidden"></div><div id="questionBank"><p class="muted">載入題庫中⋯</p></div>
       </div>
       <div class="panel"><h2>📚 課程管理</h2><p class="sub">新增課程後，學生首頁會自動顯示。移除採「封存」方式，不會刪除題目或作答紀錄。</p><div class="row"><div class="field"><label>課程名稱</label><input id="newCourseName" placeholder="例如：數學 A"></div><div class="field"><label>課程分類</label><input id="newCourseTag" placeholder="例如：數學"></div></div><div class="field"><label>課程簡介</label><input id="newCourseDesc" placeholder="課程說明（可留空）"></div><button class="btn primary" id="addCourse">新增課程</button><div class="section-head"><h3>目前課程</h3><span>COURSE MANAGEMENT</span></div><div id="courseManagementList"><p class="muted">載入課程中⋯</p></div></div>
@@ -569,6 +569,15 @@ $('publishCsv').onclick=async()=>{const file=$('csvFile').files[0];if(!file){msg
 $('refreshBank').onclick=loadQuestionBank;
 $('publishSelected').onclick=()=>updateSelectedQuestions(true);
 $('unpublishSelected').onclick=()=>updateSelectedQuestions(false);
+$('deleteSelected').onclick=async()=>{
+ const ids=[...document.querySelectorAll('.bank-check:checked')].map(x=>x.value);
+ if(!ids.length){msg('bankMsg','請先勾選要刪除的題目。');return}
+ if(!(await showOwlConfirm(`確定要永久刪除 ${ids.length} 題嗎？\n刪除後無法復原，學生對這些題目的作答紀錄也可能一併消失。`,'刪除題目','🗑️')))return;
+ const {error}=await sb.from('hp_questions').delete().in('id',ids);
+ if(error){msg('bankMsg','刪除失敗：'+error.message+(error.code==='23503'?'（這些題目已有學生作答紀錄，請先執行資料庫的 SQL 設定）':''));return}
+ msg('bankMsg',`已刪除 ${ids.length} 題。`);
+ await loadQuestionBank();await refreshPublished();renderCourses();
+};
 $('addCourse').onclick=async()=>{const name=$('newCourseName').value.trim();if(!name)return showOwlAlert('請輸入課程名稱','缺少課程名稱','🪄');const {error}=await sb.from('hp_courses').insert({name,tag:$('newCourseTag').value.trim(),description:$('newCourseDesc').value.trim(),sort_order:courses.length+1,is_archived:false});if(error){await showOwlAlert('新增失敗：'+error.message,'新增課程失敗','⚠️');return} $('newCourseName').value='';$('newCourseTag').value='';$('newCourseDesc').value='';await loadData();await showOwlAlert('新課程已成功加入霍格華茲課表！','課程已建立','✨')};
 function wrongIds(){return [...new Set(attempts.filter(a=>!a.is_correct).map(a=>a.question_id))].filter(id=>!mastered.has(id))}
 function updateWrongBadge(){const n=wrongIds().length;$('tabWrong').textContent='📕 錯題本'+(n?` (${n})`:'')}
