@@ -37,6 +37,71 @@ body{margin:0;color:var(--cream);font-family:Georgia,"Noto Serif TC","Songti TC"
 @keyframes shimmerSweep { 0%{transform:translateX(-150%) skewX(-20deg)} 100%{transform:translateX(250%) skewX(-20deg)} }
 @keyframes fadeSlideUp { from{opacity:0;transform:translateY(14px)} to{opacity:1;transform:translateY(0)} }
 
+/* 飛天掃把魔法師歡迎過場動畫 */
+@keyframes wizardFlyAcross {
+  0% { transform: translate(-120vw, 18vh) rotate(-14deg) scale(0.75); opacity: 0; }
+  12% { opacity: 1; }
+  38% { transform: translate(-6vw, -2vh) rotate(-4deg) scale(1.06); }
+  55% { transform: translate(4vw, 3vh) rotate(2deg) scale(1.04); }
+  75% { transform: translate(18vw, -4vh) rotate(-6deg) scale(1.02); opacity: 1; }
+  100% { transform: translate(120vw, -26vh) rotate(-18deg) scale(0.8); opacity: 0; }
+}
+@keyframes broomBob {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50% { transform: translateY(-7px) rotate(2deg); }
+}
+@keyframes welcomeBannerPop {
+  0% { opacity: 0; transform: translateY(24px) scale(0.92); filter: blur(4px); }
+  20% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  82% { opacity: 1; transform: translateY(0) scale(1); filter: blur(0); }
+  100% { opacity: 0; transform: translateY(-16px) scale(0.96); filter: blur(3px); }
+}
+@keyframes starTrailFade {
+  0% { opacity: 1; transform: scale(1) translate(0, 0); }
+  100% { opacity: 0; transform: scale(0.2) translate(-35px, 12px); }
+}
+
+.wizard-welcome-overlay{
+  position:fixed;inset:0;z-index:60;pointer-events:none;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 45%, rgba(28, 20, 42, 0.72) 0%, rgba(8, 6, 12, 0.85) 100%);
+  backdrop-filter:blur(4px);
+  transition:opacity .5s ease;
+}
+.wizard-welcome-overlay.fade-out{opacity:0}
+.wizard-flight-track{
+  position:relative;width:240px;height:150px;
+  animation:wizardFlyAcross 3.6s cubic-bezier(.25,.85,.35,1) forwards;
+}
+.wizard-svg{
+  width:100%;height:100%;
+  filter:drop-shadow(0 0 18px rgba(232,196,91,.65));
+  animation:broomBob .7s infinite ease-in-out;
+}
+.wizard-spark{
+  position:absolute;border-radius:50%;
+  background:radial-gradient(circle, #fffbe6 0%, #e8c45b 60%, transparent 100%);
+  box-shadow:0 0 10px #e8c45b;
+  animation:starTrailFade .9s ease-out forwards;
+}
+.wizard-welcome-card{
+  margin-top:8px;padding:16px 28px;border-radius:18px;text-align:center;
+  background:linear-gradient(135deg, rgba(32,23,40,.94), rgba(14,10,20,.94));
+  border:2px solid #d4af37;
+  box-shadow:0 16px 40px rgba(0,0,0,.85), 0 0 30px rgba(232,196,91,.35);
+  animation:welcomeBannerPop 3.6s ease forwards;
+}
+.wizard-welcome-card .sub-tag{
+  font-size:11px;letter-spacing:2px;color:#d4ae4b;margin-bottom:4px;
+}
+.wizard-welcome-card h3{
+  margin:0;font-size:clamp(19px,4vw,26px);color:#ffe999;
+  text-shadow:0 2px 10px rgba(0,0,0,.9), 0 0 16px rgba(232,196,91,.5);
+}
+.wizard-welcome-card p{
+  margin:6px 0 0;font-size:13px;color:#e5d3a1;
+}
+
 button,input,textarea,select{font:inherit}button{cursor:pointer}
 .wrap{position:relative;z-index:2;max-width:1020px;margin:auto;padding:22px 20px 100px}
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:15px;margin-bottom:22px}
@@ -110,6 +175,59 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 <body>
 <!-- 魔法大禮堂漂浮蠟燭與星塵畫布 -->
 <canvas id="magicCanvas"></canvas>
+
+<!-- 登入成功：飛天掃把魔法師歡迎動畫 -->
+<div id="wizardWelcomeOverlay" class="wizard-welcome-overlay hidden" aria-hidden="true">
+  <div class="wizard-flight-track" id="wizardFlightTrack">
+    <svg class="wizard-svg" viewBox="0 0 260 160" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <!-- 掃把尾部魔法光暈 -->
+      <ellipse cx="45" cy="108" rx="34" ry="12" fill="url(#broomGlow)" opacity="0.85"/>
+      <!-- 飛天掃把木柄 -->
+      <path d="M58 106 L225 76" stroke="#8b5a2b" stroke-width="6" stroke-linecap="round"/>
+      <path d="M58 105 L225 75" stroke="#c68b49" stroke-width="2" stroke-linecap="round"/>
+      <!-- 飛天掃把尾端刷毛 -->
+      <path d="M62 105 L18 93 L25 103 L12 108 L26 113 L19 122 L63 108 Z" fill="#b8843b" stroke="#6b4416" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M58 103 L58 110" stroke="#e8c45b" stroke-width="3" stroke-linecap="round"/>
+      <!-- 魔法師斗篷（飄揚感） -->
+      <path d="M128 66 C105 74, 82 88, 66 96 C84 102, 108 100, 134 94 Z" fill="#251838" stroke="#e8c45b" stroke-width="1.5"/>
+      <path d="M132 64 L114 96 L152 93 L146 62 Z" fill="#32204a" stroke="#c7a342" stroke-width="1.5" stroke-linejoin="round"/>
+      <!-- 圍巾（霍格華茲紅金配色） -->
+      <path d="M131 61 L147 60 L145 68 L129 69 Z" fill="#8e1b1b"/>
+      <path d="M129 64 C114 68, 98 73, 86 72 C95 79, 112 78, 131 69 Z" fill="#a82020" stroke="#e8c45b" stroke-width="1.2"/>
+      <!-- 魔法師頭部與微笑 -->
+      <circle cx="141" cy="48" r="12" fill="#fbd7b8"/>
+      <circle cx="145" cy="46" r="1.6" fill="#231710"/>
+      <path d="M143 52 Q146 54 149 51" stroke="#7a3e26" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+      <!-- 巫師尖頂帽 -->
+      <path d="M123 41 Q141 44 159 38 Q143 35 123 41 Z" fill="#1e142e" stroke="#e8c45b" stroke-width="1.5"/>
+      <path d="M128 39 L136 14 L152 38 Z" fill="#271a3b" stroke="#e8c45b" stroke-width="1.5" stroke-linejoin="round"/>
+      <path d="M131 35 L149 34" stroke="#e8c45b" stroke-width="2"/>
+      <!-- 手臂與高舉的發光魔杖 -->
+      <path d="M144 68 L166 57" stroke="#32204a" stroke-width="6" stroke-linecap="round"/>
+      <circle cx="167" cy="56" r="3.5" fill="#fbd7b8"/>
+      <path d="M168 55 L194 40" stroke="#d4a259" stroke-width="2.5" stroke-linecap="round"/>
+      <!-- 魔杖尖端光芒 -->
+      <circle cx="196" cy="39" r="9" fill="url(#wandTipGlow)"/>
+      <path d="M196 27 L196 51 M184 39 L208 39" stroke="#fff9d6" stroke-width="1.8" stroke-linecap="round"/>
+      <defs>
+        <radialGradient id="broomGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffe885" stop-opacity="0.9"/>
+          <stop offset="100%" stop-color="#e8c45b" stop-opacity="0"/>
+        </radialGradient>
+        <radialGradient id="wandTipGlow" cx="50%" cy="50%" r="50%">
+          <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+          <stop offset="50%" stop-color="#ffe066" stop-opacity="0.8"/>
+          <stop offset="100%" stop-color="#e8c45b" stop-opacity="0"/>
+        </radialGradient>
+      </defs>
+    </svg>
+  </div>
+  <div class="wizard-welcome-card">
+    <div class="sub-tag">HOGWARTS SCHOOL OF WITCHCRAFT AND WIZARDRY</div>
+    <h3 id="wizardWelcomeTitle">✨ 歡迎進入魔法學院學系！</h3>
+    <p id="wizardWelcomeSub">飛天掃把已為你引路，願今日的咒語與知識與你同在。</p>
+  </div>
+</div>
 
 <div class="wrap">
   <header class="topbar">
@@ -382,6 +500,49 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
   animate();
 })();
 
+// 飛天掃把魔法師歡迎動畫觸發器
+let wizardWelcomeTimer = null, wizardSparkTimer = null;
+function playWizardWelcome(userEmail){
+  const overlay = document.getElementById('wizardWelcomeOverlay');
+  const track = document.getElementById('wizardFlightTrack');
+  const title = document.getElementById('wizardWelcomeTitle');
+  if(!overlay || !track) return;
+
+  clearTimeout(wizardWelcomeTimer);
+  clearInterval(wizardSparkTimer);
+  overlay.querySelectorAll('.wizard-spark').forEach(el => el.remove());
+
+  const name = userEmail ? userEmail.split('@')[0] : '見習魔法師';
+  title.textContent = `✨ 歡迎 ${name} 進入魔法學院學系！`;
+
+  overlay.classList.remove('hidden', 'fade-out');
+  // 重新觸發 CSS 關鍵影格動畫
+  track.style.animation = 'none';
+  track.offsetHeight;
+  track.style.animation = '';
+
+  // 掃把飛行沿途撒落金色魔法星塵
+  wizardSparkTimer = setInterval(() => {
+    const rect = track.getBoundingClientRect();
+    if(rect.width === 0) return;
+    const spark = document.createElement('div');
+    spark.className = 'wizard-spark';
+    const size = 4 + Math.random() * 6;
+    spark.style.width = size + 'px';
+    spark.style.height = size + 'px';
+    spark.style.left = (rect.left + rect.width * 0.22 + (Math.random() - 0.5) * 20) + 'px';
+    spark.style.top = (rect.top + rect.height * 0.68 + (Math.random() - 0.5) * 18) + 'px';
+    overlay.appendChild(spark);
+    setTimeout(() => spark.remove(), 900);
+  }, 55);
+
+  wizardWelcomeTimer = setTimeout(() => {
+    clearInterval(wizardSparkTimer);
+    overlay.classList.add('fade-out');
+    setTimeout(() => overlay.classList.add('hidden'), 500);
+  }, 3300);
+}
+
 // 課程卡片滑鼠聚光燈跟隨效果
 document.addEventListener('pointermove', e => {
   const card = e.target.closest('.course');
@@ -499,7 +660,7 @@ function readAnswer(card){
 }
 function typeLabel(t){return t==='multi'?'・多選題（可複選）':t==='fill'?'・填充題':''}
 function renderMath(el){if(window.MathJax?.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{});}
-let appEntered=false;
+let appEntered=false, justLoggedIn=false;
 async function init(){
  if(!sb){authNotice('請先在 HTML 上方填入 Supabase URL 與 Publishable/anon key，儲存後重新整理。');return}
  const {data:{session}}=await sb.auth.getSession();
@@ -516,6 +677,7 @@ function showLogin(){$('loginView').classList.remove('hidden');$('appView').clas
 async function enterApp(){
  $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');$('mobileNav').classList.remove('hidden');
  $('welcome').textContent='歡迎回到霍格華茲！';
+ if(justLoggedIn){justLoggedIn=false;playWizardWelcome(user?.email)}
   await loadData();
  let v='homeView';try{v=sessionStorage.getItem('hpView')||'homeView'}catch(e){}
  if(v==='adminView'&&isAdmin){showOnly('adminView');loadQuestionBank()}
@@ -637,7 +799,7 @@ async function updateSelectedQuestions(published){
  await loadQuestionBank();await refreshPublished();renderCourses();
 }
 
-$('loginBtn').onclick=async()=>{if(!sb){init();return}const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error)authNotice(error.message)};
+$('loginBtn').onclick=async()=>{if(!sb){init();return}justLoggedIn=true;const {error}=await sb.auth.signInWithPassword({email:$('email').value,password:$('password').value});if(error){justLoggedIn=false;authNotice(error.message)}};
 $('signupBtn').onclick=async()=>{if(!sb){init();return}const {error}=await sb.auth.signUp({email:$('email').value,password:$('password').value});if(error)authNotice(error.message);else authNotice('帳號建立成功！若 Supabase 要求信箱驗證，請先到信箱完成驗證。')};
 $('logoutBtn').onclick=async()=>sb.auth.signOut();
 $('navLogout').onclick=async()=>sb.auth.signOut();
