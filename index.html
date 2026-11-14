@@ -430,6 +430,50 @@ function showOwlConfirm(text, title = '校長室確認', icon = '🗝️'){
 const $ = id => document.getElementById(id);
 const today = new Date();
 $('today').textContent = today.toLocaleDateString('zh-TW',{year:'numeric',month:'2-digit',day:'2-digit'});
+const QUOTES=[
+ '每一道難題，都藏著等待被發現的線索。',
+ '今天多懂一點，明天的魔法就更穩一點。',
+ '錯題不是失敗，是魔杖還在校準的方向。',
+ '再試一次，咒語往往在第二次才會成功。',
+ '真正的實力，是在沒人看見的練習裡長出來的。',
+ '慢一點沒關係，只要今天比昨天多踏出一步。',
+ '把不懂的地方記下來，它就會變成你的強項。',
+ '專注十分鐘，勝過心不在焉的一小時。',
+ '每一次答題，都是在替未來的自己加分。',
+ '困難的題目，正是你變強的入口。',
+ '耐心是最好用的咒語，它會讓答案慢慢現形。',
+ '不用跟別人比，只要贏過昨天的自己。',
+ '今天的努力，會在考場上默默幫你一把。',
+ '遇到瓶頸，代表你正走在新的地方。',
+ '把基礎練穩，高深的魔法自然水到渠成。',
+ '先求弄懂，再求變快，速度會自己跟上來。',
+ '每複習一次，記憶就多一道保護咒。',
+ '別怕答錯，錯誤是最誠實的老師。',
+ '堅持的人，總能在深夜等到燭光亮起的那一刻。',
+ '你已經走了很遠，再撐一下就能看見風景。',
+ '會的題目再練一遍，不會的題目弄懂一遍。'
+'魔杖在手，信心我有！'
+'咒語一念，考試必勝！'
+'努力溫習，召喚好成績！'
+'不怕困難，勇闖考關！'
+'知識就是最強魔法！'
+'專心學習，魔力滿滿！'
+'相信自己，魔法無敵！'
+'拿起課本，成為學霸！'
+'勤奮練習，施展奇蹟！'
+'不怕難題，勇敢出擊！'
+'今天努力，明天發光！'
+'魔法靠練習，成績靠努力！'
+'考試不是魔王，你才是勇者！'
+'用知識當魔杖，用努力施魔法！'
+'一分耕耘，一分魔力！'
+'遇到難題，冷靜施法！'
+'不放棄，就是最強魔法！'
+'讓努力成為你的護身咒！'
+'自信滿滿，迎戰考場！'
+'Expecto 滿分！考試必勝！'
+];
+(function(){const d=new Date(),n=Math.floor((Date.UTC(d.getFullYear(),d.getMonth(),d.getDate())-Date.UTC(d.getFullYear(),0,0))/86400000);$('quote').textContent='「'+QUOTES[Math.floor(Math.random()*QUOTES.length)]+'」'})();
 const hasConfig = window.SUPABASE_URL.startsWith('https://') && !window.SUPABASE_URL.includes('YOUR_PROJECT') && window.SUPABASE_ANON_KEY.length > 20 && !window.SUPABASE_ANON_KEY.includes('YOUR_');
 let sb=null, user=null, isAdmin=false, courses=[], currentCourse=null, attempts=[], pubList=[], mastered=new Set(), wrongQs=[];
 const MATH_URL='https://script.google.com/macros/s/AKfycbzeIw7Jd8xMl42fa0wN8u5pHAQRfW67wW0C8SDOwuSzn1UqadSvRXr_NlKczcXTTwOsMg/exec';
