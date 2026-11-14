@@ -162,8 +162,9 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
         <h2>🗝️ 校長室・發布新題目</h2><p class="sub">支援逐題輸入或 CSV 檔案。題幹、選項、答案與解析皆可使用 LaTeX。</p>
         <div class="field"><label>科目</label><select id="adminCourse"></select></div>
         <div class="field"><label>題目</label><textarea id="mqQuestion" style="min-height:90px" placeholder="例如：若 $f(x)=x^2$，則 $f'(x)$ 為何？"></textarea></div>
-        <div class="field"><label>選項（每行一個選項，依序為 A、B、C、D）</label><textarea id="mqOptions" style="min-height:110px" placeholder="$x$&#10;$2x$&#10;$x^2$&#10;$2$"></textarea></div>
-        <div class="field"><label>正確答案</label><select id="mqAnswer"><option>A</option><option>B</option><option>C</option><option>D</option></select></div>
+        <div class="field"><label>題型</label><select id="mqType"><option value="single">單選題</option><option value="multi">多選題</option><option value="fill">填充題	</option></select></div>
+	<div class="field"><label>選項（每行一個選項，依序為 A、B、C、D）</label><textarea id="mqOptions" style="min-height:110px" placeholder="$x$&#10;$2x$&#10;$x^2$&#10;$2$"></textarea></div>
+        <div class="field"><label>正確答案（單選填 A；多選填 AC；填充填答案，多個可接受的答案用 | 分隔）</label><input id="mqAnswer" placeholder="例如：A　或　ACD　或　3|三"></div>
         <div class="field"><label>解析</label><textarea id="mqExplanation" style="min-height:90px" placeholder="例如：使用冪次微分法則"></textarea></div>
         <div class="field"><label>或選擇 CSV 檔（欄位：question,option_a,option_b,option_c,option_d,answer,explanation）</label><input type="file" id="csvFile" accept=".csv,text/csv"></div>
         <div class="row"><button class="btn primary" id="publishText">發布文字題目</button><button class="btn" id="publishCsv">上傳 CSV 題目</button></div>
@@ -426,21 +427,45 @@ if(hasConfig && window.supabase) sb=window.supabase.createClient(window.SUPABASE
 
 function msg(id,text){$(id).textContent=text;$(id).classList.remove('hidden')}
 function hide(id){$(id).classList.add('hidden')}
-function showOnly(id){['homeView','courseView','adminView','wrongView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('tabs').classList.toggle('hidden',id==='adminView');$('tabHome').classList.toggle('primary',id!=='wrongView');$('tabWrong').classList.toggle('primary',id==='wrongView')}
+function showOnly(id){try{sessionStorage.setItem('hpView',id)}catch(e){}['homeView','courseView','adminView','wrongView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('tabs').classList.toggle('hidden',id==='adminView');$('tabHome').classList.toggle('primary',id!=='wrongView');$('tabWrong').classList.toggle('primary',id==='wrongView')}
 function authNotice(t){msg('authMsg',t)}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function answerInput(q,name,disabled){
+ const t=q.question_type||'single';
+ if(t==='fill')return `<div class="field"><input type="text" class="fill-input" name="${name}" placeholder="請輸入答案" autocomplete="off" ${disabled?'disabled':''}></div>`;
+ const opts=[['A',q.option_a],['B',q.option_b],['C',q.option_c],['D',q.option_d]].filter(x=>x[1]);
+ const kind=t==='multi'?'checkbox':'radio';
+ return `<div class="options">${opts.map(([k,v])=>`<label class="option"><input type="${kind}" name="${name}" value="${k}" ${disabled?'disabled':''}><span><b>${k}.</b> ${escapeHtml(v)}</span></label>`).join('')}</div>`;
+}
+function readAnswer(card){
+ const fill=card.querySelector('.fill-input');
+ if(fill)return fill.value.trim();
+ return [...card.querySelectorAll('input:checked')].map(x=>x.value).sort().join('');
+}
+function typeLabel(t){return t==='multi'?'・多選題（可複選）':t==='fill'?'・填充題':''}
 function renderMath(el){if(window.MathJax?.typesetPromise) MathJax.typesetPromise([el]).catch(()=>{});}
+let appEntered=false;
 async function init(){
  if(!sb){authNotice('請先在 HTML 上方填入 Supabase URL 與 Publishable/anon key，儲存後重新整理。');return}
  const {data:{session}}=await sb.auth.getSession();
- if(session){user=session.user;await enterApp()}
- sb.auth.onAuthStateChange(async(_event,session)=>{if(session){user=session.user;await enterApp()}else{user=null;showLogin()}});
+ if(session){user=session.user;appEntered=true;await enterApp()}
+ sb.auth.onAuthStateChange(async(_event,session)=>{
+  if(session){
+   const changed=!user||user.id!==session.user.id;
+   user=session.user;
+   if(!appEntered||changed){appEntered=true;await enterApp()}
+  }else{user=null;appEntered=false;showLogin()}
+ });
 }
 function showLogin(){$('loginView').classList.remove('hidden');$('appView').classList.add('hidden');$('logoutBtn').classList.add('hidden');$('mobileNav').classList.add('hidden')}
 async function enterApp(){
  $('loginView').classList.add('hidden');$('appView').classList.remove('hidden');$('logoutBtn').classList.remove('hidden');$('mobileNav').classList.remove('hidden');
  $('welcome').textContent='歡迎回到霍格華茲！';
- await loadData();showOnly('homeView');
+  await loadData();
+ let v='homeView';try{v=sessionStorage.getItem('hpView')||'homeView'}catch(e){}
+ if(v==='adminView'&&isAdmin){showOnly('adminView');loadQuestionBank()}
+ else if(v==='wrongView'){openWrong()}
+ else showOnly('homeView');
 }
 async function loadData(){
  const [c,a,adm,mst]=await Promise.all([
@@ -493,22 +518,21 @@ async function openCourse(id){
  if(isMath(currentCourse)){window.open(MATH_URL,'_blank','noopener');return}
  $('courseTitle').textContent=currentCourse.name;$('courseDesc').textContent=currentCourse.description||'專心研習，讓知識成為你的魔法。';
  $('questionList').innerHTML='<p class="muted">正在從校長室的題庫取出題目⋯</p>';showOnly('courseView');
- const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order').eq('course_id',id).eq('is_published',true).order('sort_order');
+ const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order,question_type').eq('course_id',id).eq('is_published',true).order('sort_order');
  if(error){$('questionList').textContent='讀取題目失敗：'+error.message;return}
  if(!data.length){$('questionList').innerHTML='<div class="notice">這門課程目前還沒有題目，請等待校長發布。</div>';return}
  const done=new Set(attempts.map(a=>a.question_id));
  $('questionList').innerHTML=data.map((q,i)=>{
   const old=done.has(q.id);
-  const opts=[['A',q.option_a],['B',q.option_b],['C',q.option_c],['D',q.option_d]].filter(x=>x[1]);
-  return `<article class="question-card" data-q="${q.id}"><div class="q-top">第 ${i+1} 題 ${old?'・已作答':''}</div><div class="q-text">${escapeHtml(q.question_text)}</div><div class="options">${opts.map(([k,v])=>`<label class="option"><input type="radio" name="q_${q.id}" value="${k}" ${old?'disabled':''}><span><b>${k}.</b> ${escapeHtml(v)}</span></label>`).join('')}</div><button class="btn primary answer-btn" ${old?'disabled':''} data-answer="${q.id}">${old?'已完成':'確認答案'}</button><div class="feedback hidden" id="feedback_${q.id}"></div></article>`;
+  return `<article class="question-card" data-q="${q.id}"><div class="q-top">第 ${i+1} 題${typeLabel(q.question_type)} ${old?'・已作答':''}</div><div class="q-text">${escapeHtml(q.question_text)}</div>${answerInput(q,'q_'+q.id,old)}<button class="btn primary answer-btn" ${old?'disabled':''} data-answer="${q.id}">${old?'已完成':'確認答案'}</button><div class="feedback hidden" id="feedback_${q.id}"></div></article>`;
  }).join('');
  renderMath($('questionList'));
  document.querySelectorAll('[data-answer]').forEach(b=>b.onclick=()=>submitAnswer(b.dataset.answer));
 }
 async function submitAnswer(qid){
- const card=document.querySelector(`[data-q="${qid}"]`),selected=card.querySelector('input:checked');
- if(!selected){await showOwlAlert('請先選擇一個答案，再施展確認咒語！','尚未選擇答案','🪄');return}
- const {data:result,error}=await sb.rpc('hp_submit_answer',{p_question_id:qid,p_selected_answer:selected.value});
+  const card=document.querySelector(`[data-q="${qid}"]`),ans=readAnswer(card);
+ if(!ans){await showOwlAlert('請先作答，再施展確認咒語！','尚未作答','🪄');return}
+ const {data:result,error}=await sb.rpc('hp_submit_answer',{p_question_id:qid,p_selected_answer:ans});
  if(error){await showOwlAlert('儲存作答失敗：'+error.message,'魔法紀錄異常','⚠️');return}
  const correct=!!result.is_correct;
  attempts.push({question_id:qid,is_correct:correct,created_at:new Date().toISOString()});
@@ -525,14 +549,22 @@ function parseCSV(text){
  for(let i=0;i<text.length;i++){const c=text[i],n=text[i+1];if(c==='"'&&quoted&&n==='"'){cell+='"';i++}else if(c==='"'){quoted=!quoted}else if(c===','&&!quoted){row.push(cell);cell=''}else if((c==='\n'||c==='\r')&&!quoted){if(c==='\r'&&n==='\n')i++;row.push(cell);if(row.some(x=>x.trim()))rows.push(row);row=[];cell=''}else cell+=c}
  row.push(cell);if(row.some(x=>x.trim()))rows.push(row);return rows;
 }
-function rowToQuestion(r){return {question_text:r[0]||'',option_a:r[1]||'',option_b:r[2]||'',option_c:r[3]||'',option_d:r[4]||'',answer:(r[5]||'').trim().toUpperCase(),explanation:r[6]||''}}
+function rowToQuestion(r){
+ const raw=(r[5]||'').trim(),o=[1,2,3,4].map(i=>(r[i]||'').trim());
+ const letters=[...new Set(raw.toUpperCase().replace(/[^A-D]/g,'').split(''))].sort().join('');
+ const map={'單選':'single','單選題':'single','多選':'multi','多選題':'multi','填充':'fill','填充題':'fill',single:'single',multi:'multi',fill:'fill'};
+ let type=map[(r[7]||'').trim().toLowerCase()];
+ if(!type)type=!o.some(Boolean)?'fill':(letters.length>1?'multi':'single');
+ const fill=type==='fill';
+ return {question_text:r[0]||'',option_a:fill?'':o[0],option_b:fill?'':o[1],option_c:fill?'':o[2],option_d:fill?'':o[3],answer:fill?raw:letters,explanation:r[6]||'',question_type:type};
+}
 async function publishRows(rows){
  const courseId=$('adminCourse').value;if(!courseId){msg('adminMsg','請先建立或選擇一門課程。');return}
- const clean=rows.filter(r=>r.question_text&&['A','B','C','D'].includes(r.answer)).map((r,i)=>({...r,course_id:courseId,sort_order:i+1,created_by:user.id,is_published:false}));
+ const clean=rows.filter(r=>r.question_text&&r.answer).map((r,i)=>({...r,course_id:courseId,sort_order:i+1,created_by:user.id,is_published:false}));
  if(!clean.length){msg('adminMsg','沒有可發布的有效題目。請確認每題都有題幹與 A/B/C/D 答案。');return}
  const {error}=await sb.from('hp_questions').insert(clean);
  if(error){msg('adminMsg','發布失敗：'+error.message);return}
- msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);['mqQuestion','mqOptions','mqExplanation'].forEach(id=>$(id).value='');$('csvFile').value='';await loadQuestionBank();
+ msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);['mqQuestion','mqOptions','mqExplanation','mqAnswer'].forEach(id=>$(id).value='');$('csvFile').value='';await loadQuestionBank();
 }
 
 async function loadQuestionBank(){
@@ -557,13 +589,22 @@ $('navLogout').onclick=async()=>sb.auth.signOut();
 $('backHome').onclick=()=>showOnly('homeView');$('backAdminHome').onclick=()=>showOnly('homeView');
 $('openAdmin').onclick=()=>{if(!isAdmin)return;showOnly('adminView');loadQuestionBank()};$('navAdmin').onclick=()=>{if(isAdmin){showOnly('adminView');loadQuestionBank()}};$('navHome').onclick=()=>showOnly('homeView');
 function splitOptions(s){return s.split(/\r?\n/).map(x=>x.trim()).filter(Boolean)}
+$('mqType').onchange=()=>$('mqOptions').closest('.field').classList.toggle('hidden',$('mqType').value==='fill');
 $('publishText').onclick=()=>{
- const q=$('mqQuestion').value.trim(),opts=splitOptions($('mqOptions').value),ans=$('mqAnswer').value,exp=$('mqExplanation').value.trim();
+ const q=$('mqQuestion').value.trim(),type=$('mqType').value,exp=$('mqExplanation').value.trim(),ans=$('mqAnswer').value.trim();
+ const opts=type==='fill'?[]:splitOptions($('mqOptions').value);
  if(!q){msg('adminMsg','請輸入題目。');return}
- if(opts.length<2){msg('adminMsg','請至少輸入 2 個選項（每行一個）。');return}
- if(opts.length>4){msg('adminMsg','最多只能有 4 個選項，目前偵測到 '+opts.length+' 行。');return}
- if(ans.charCodeAt(0)-65>=opts.length){msg('adminMsg','正確答案 '+ans+' 超出目前的選項數量。');return}
- publishRows([rowToQuestion([q,opts[0],opts[1]||'',opts[2]||'',opts[3]||'',ans,exp])]);
+ if(!ans){msg('adminMsg','請輸入正確答案。');return}
+ if(type!=='fill'){
+  if(opts.length<2){msg('adminMsg','請至少輸入 2 個選項（每行一個）。');return}
+  if(opts.length>4){msg('adminMsg','最多只能有 4 個選項，目前偵測到 '+opts.length+' 行。');return}
+  const letters=[...new Set(ans.toUpperCase().replace(/[^A-D]/g,'').split(''))].sort();
+  if(!letters.length){msg('adminMsg','答案請填選項代號 A～D。');return}
+  if(letters.some(l=>l.charCodeAt(0)-65>=opts.length)){msg('adminMsg','答案超出目前的選項數量。');return}
+  if(type==='single'&&letters.length!==1){msg('adminMsg','單選題只能有一個正確答案。');return}
+  if(type==='multi'&&letters.length<2){msg('adminMsg','多選題請填兩個以上的答案，例如 AC。');return}
+ }
+ publishRows([rowToQuestion([q,opts[0],opts[1],opts[2],opts[3],ans,exp,type])]);
 };
 $('publishCsv').onclick=async()=>{const file=$('csvFile').files[0];if(!file){msg('adminMsg','請先選擇 CSV 檔案。');return}const rows=parseCSV(await file.text());const data=rows.slice(1).map(rowToQuestion);publishRows(data)};
 $('refreshBank').onclick=loadQuestionBank;
@@ -587,7 +628,7 @@ async function openWrong(){
  const ids=wrongIds(),box=$('wrongList');
  if(!ids.length){wrongQs=[];renderWrong();return}
  box.innerHTML='<p class="muted">正在翻開錯題本⋯</p>';
- const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d').in('id',ids);
+ const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,question_type').in('id',ids);
  if(error){box.innerHTML='<div class="notice">讀取錯題失敗：'+escapeHtml(error.message)+'</div>';return}
  wrongQs=data||[];renderWrong();
 }
@@ -597,21 +638,20 @@ function renderWrong(){
  if(!list.length){box.innerHTML='<div class="notice">目前沒有待複習的錯題，太棒了！</div>';return}
  box.innerHTML=list.map((q,i)=>{
   const c=courses.find(x=>x.id===q.course_id);
-  const opts=[['A',q.option_a],['B',q.option_b],['C',q.option_c],['D',q.option_d]].filter(x=>x[1]);
-  return `<article class="question-card" data-w="${q.id}"><div class="q-top">${escapeHtml(c?.name||'')}・第 ${i+1} 題</div><div class="q-text">${escapeHtml(q.question_text)}</div><div class="options">${opts.map(([k,v])=>`<label class="option"><input type="radio" name="w_${q.id}" value="${k}"><span><b>${k}.</b> ${escapeHtml(v)}</span></label>`).join('')}</div><button class="btn primary" data-check="${q.id}">檢查答案</button><div class="feedback hidden" id="wfeedback_${q.id}"></div></article>`;
+  return `<article class="question-card" data-w="${q.id}"><div class="q-top">${escapeHtml(c?.name||'')}・第 ${i+1} 題${typeLabel(q.question_type)}</div><div class="q-text">${escapeHtml(q.question_text)}</div>${answerInput(q,'w_'+q.id,false)}<button class="btn primary" data-check="${q.id}">檢查答案</button><div class="feedback hidden" id="wfeedback_${q.id}"></div></article>`;
  }).join('');
  renderMath(box);
  box.querySelectorAll('[data-check]').forEach(b=>b.onclick=()=>checkWrong(b.dataset.check,b));
 }
 async function checkWrong(qid,btn){
- const card=document.querySelector(`[data-w="${qid}"]`),sel=card.querySelector('input:checked'),fb=$('wfeedback_'+qid);
- if(!sel){await showOwlAlert('請先選擇一個答案。','尚未選擇答案','🪄');return}
- const {data:r,error}=await sb.rpc('hp_check_answer',{p_question_id:qid,p_selected_answer:sel.value});
+  const card=document.querySelector(`[data-w="${qid}"]`),ans=readAnswer(card),fb=$('wfeedback_'+qid);
+ if(!ans){await showOwlAlert('請先作答。','尚未作答','🪄');return}
+ const {data:r,error}=await sb.rpc('hp_check_answer',{p_question_id:qid,p_selected_answer:ans});
  if(error){await showOwlAlert('檢查失敗：'+error.message+'\n請確認已執行錯題本的 SQL。','魔法檢查異常','⚠️');return}
  fb.classList.remove('hidden');
  if(!r.is_correct){
   fb.innerHTML='<b>📖 還不對，再想想看！</b><br>換一個選項再試一次。';
-  card.querySelectorAll('input').forEach(x=>x.checked=false);return;
+   card.querySelectorAll('input').forEach(x=>{x.checked=false;if(x.type==='text')x.value=''});return;
  }
  card.querySelectorAll('input').forEach(x=>x.disabled=true);btn.disabled=true;btn.textContent='已完成';
  let note='這題已移出錯題本。';
