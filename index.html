@@ -291,12 +291,24 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
         <div id="adminMsg" class="notice hidden"></div>
       </div>
       <div class="panel">
-        <h2>🗃️ 題庫管理・選擇後再發布</h2>
-        <p class="sub">上傳的題目先存入私人題庫，不會立刻出現在學生端。勾選要給學生練習的題目，再按發布。</p>
-        <div class="row"><button class="btn" id="refreshBank">重新整理題庫</button><button class="btn primary" id="publishSelected">發布勾選題目</button><button class="btn danger" id="unpublishSelected">收回勾選題目</button><button class="btn danger" id="deleteSelected">刪除勾選題目</button></div>
-        <div id="bankMsg" class="notice hidden"></div><div id="questionBank"><p class="muted">載入題庫中⋯</p></div>
-      </div>
-	<div class="panel">
+  <h2>🗃️ 題庫管理・選擇後再發布</h2>
+  <p class="sub">上傳的題目先存入私人題庫，不會立刻出現在學生端。勾選要給學生練習的題目，再按發布。</p>
+  <div class="row"><button class="btn" id="refreshBank">重新整理題庫</button><button class="btn primary" id="publishSelected">發布勾選題目</button><button class="btn danger" id="unpublishSelected">收回勾選題目</button><button class="btn danger" id="deleteSelected">刪除勾選題目</button></div>
+  <div class="row">
+    <div class="field"><label>課程</label><select id="bkCourse"><option value="">全部課程</option></select></div>
+    <div class="field"><label>狀態</label><select id="bkStatus"><option value="">全部</option><option value="pub">已發布</option><option value="draft">草稿</option></select></div>
+    <div class="field"><label>題型</label><select id="bkType"><option value="">全部</option><option value="single">單選</option><option value="multi">多選</option><option value="fill">填充</option></select></div>
+  </div>
+  <div class="row">
+    <div class="field"><label>搜尋題目文字</label><input id="bkSearch" placeholder="輸入關鍵字"></div>
+    <div class="field"><label>重複題</label><select id="bkDup"><option value="">全部</option><option value="dup">只看重複的題目</option></select></div>
+  </div>
+  <div class="row"><button class="btn" id="bkSelectAll">全選目前篩選結果</button><button class="btn" id="bkSelectNone">取消全選</button><button class="btn" id="bkPickDup">勾選多餘的重複題</button></div>
+  <p class="muted" id="bkCount"></p>
+  <div id="bankMsg" class="notice hidden"></div>
+  <div id="questionBank"><p class="muted">載入題庫中⋯</p></div>
+  <div class="row hidden" id="bkPager"><button class="btn" id="bkPrev">上一頁</button><span class="muted" id="bkPage" style="text-align:center;align-self:center"></span><button class="btn" id="bkNext">下一頁</button></div>
+</div>
   <h2>📊 學生作答情況</h2><p class="sub">查看每位學生的作答進度與答對率，點選學生可看逐題紀錄。</p>
   <div class="row">
     <div class="field"><label>課程</label><select id="adStatCourse"></select></div>
@@ -778,21 +790,88 @@ function rowToQuestion(r){
 }
 async function publishRows(rows){
  const courseId=$('adminCourse').value;if(!courseId){msg('adminMsg','請先建立或選擇一門課程。');return}
- const clean=rows.filter(r=>r.question_text&&r.answer).map((r,i)=>({...r,course_id:courseId,sort_order:i+1,created_by:user.id,is_published:false}));
- if(!clean.length){msg('adminMsg','沒有可發布的有效題目。請確認每題都有題幹與 A/B/C/D 答案。');return}
+ const valid=rows.filter(r=>r.question_text&&r.answer);
+ if(!valid.length){msg('adminMsg','沒有可發布的有效題目。請確認每題都有題幹與答案。');return}
+ const ex=await fetchAllQuestions();
+ if(ex.error){msg('adminMsg','檢查重複題失敗：'+ex.error.message);return}
+ const seen=new Set(ex.data.map(qKey)),clean=[];let dup=0;
+ valid.forEach(r=>{const k=qKey(r);if(seen.has(k)){dup++;return}seen.add(k);clean.push({...r,course_id:courseId,sort_order:clean.length+1,created_by:user.id,is_published:false})});
+ if(!clean.length){msg('adminMsg',`這 ${dup} 題題庫裡都已經有了，沒有匯入任何題目。`);return}
  const {error}=await sb.from('hp_questions').insert(clean);
  if(error){msg('adminMsg','發布失敗：'+error.message);return}
- msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`);['mqQuestion','mqOptions','mqExplanation','mqAnswer'].forEach(id=>$(id).value='');$('csvFile').value='';await loadQuestionBank();
+ msg('adminMsg',`成功匯入 ${clean.length} 題，已存入私人題庫；尚未提供給學生。`+(dup?`另有 ${dup} 題與題庫重複，已自動略過。`:''));
+ ['mqQuestion','mqOptions','mqExplanation','mqAnswer'].forEach(id=>$(id).value='');$('csvFile').value='';await loadQuestionBank();
 }
-
+let bankAll=[],bkSel=new Set(),dupInfo=new Map(),bkExtras=[],bkPage=0;
+const BK_PAGE=20;
+function normTxt(s){return String(s||'').normalize('NFKC').toLowerCase().replace(/\s+/g,'').replace(/["'“”‘’「」『』【】《》、。!?]/g,'')}
+function qKey(q){return normTxt(q.question_text)+'§'+['option_a','option_b','option_c','option_d','option_e'].map(k=>normTxt(q[k])).join('|')}
+async function fetchAllQuestions(){
+ const out=[];
+ for(let from=0;;from+=1000){
+  const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,option_e,question_type,is_published,created_at').order('created_at',{ascending:false}).order('id').range(from,from+999);
+  if(error)return {error};
+  out.push(...data);
+  if(data.length<1000)break;
+ }
+ return {data:out};
+}
+function bkFiltered(){
+ const c=$('bkCourse').value,s=$('bkStatus').value,t=$('bkType').value,kw=normTxt($('bkSearch').value),d=$('bkDup').value;
+ return bankAll.filter(q=>(!c||q.course_id===c)&&(!s||(s==='pub')===!!q.is_published)&&(!t||(q.question_type||'single')===t)&&(!kw||normTxt(q.question_text).includes(kw))&&(!d||dupInfo.has(q.id)));
+}
+function updateBkCount(m){
+ if(m===undefined)m=bkFiltered().length;
+ $('bkCount').textContent=`題庫共 ${bankAll.length} 題，符合篩選 ${m} 題，已勾選 ${bkSel.size} 題；重複題 ${dupInfo.size} 題（其中 ${bkExtras.length} 題為多餘）`;
+}
+function renderBank(){
+ const box=$('questionBank');
+ if(!bankAll.length){box.innerHTML='<div class="notice">目前題庫是空的。上傳題目後會先保存在這裡。</div>';$('bkPager').classList.add('hidden');$('bkCount').textContent='';return}
+ const list=bkFiltered(),pages=Math.max(1,Math.ceil(list.length/BK_PAGE));
+ if(bkPage>=pages)bkPage=pages-1;if(bkPage<0)bkPage=0;
+ const tl={single:'單選',multi:'多選',fill:'填充'};
+ box.innerHTML=list.slice(bkPage*BK_PAGE,(bkPage+1)*BK_PAGE).map(q=>{
+  const c=courses.find(x=>x.id===q.course_id),n=dupInfo.get(q.id);
+  return `<label class="option" style="align-items:flex-start"><input type="checkbox" class="bank-check" value="${q.id}" ${bkSel.has(q.id)?'checked':''}><span style="flex:1"><b>${escapeHtml(c?.name||'未分類課程')}</b><span class="tag">${q.is_published?'已發布':'草稿／未發布'}</span><span class="tag">${tl[q.question_type||'single']||'單選'}</span>${n?`<span class="tag" style="color:#f0b7a5;border-color:#78433a">重複 ×${n}</span>`:''}<div style="margin-top:5px" title="${escapeHtml(q.question_text)}">${escapeHtml(shortText(q.question_text,100))}</div><small class="muted">題目 ID：${q.id.slice(0,8)}</small></span></label>`;
+ }).join('')||'<div class="notice">沒有符合條件的題目。</div>';
+ box.querySelectorAll('.bank-check').forEach(cb=>cb.onchange=()=>{cb.checked?bkSel.add(cb.value):bkSel.delete(cb.value);updateBkCount()});
+ $('bkPager').classList.toggle('hidden',pages<=1);
+ $('bkPage').textContent=`第 ${bkPage+1} / ${pages} 頁`;
+ $('bkPrev').disabled=bkPage<=0;$('bkNext').disabled=bkPage>=pages-1;
+ updateBkCount(list.length);
+}
 async function loadQuestionBank(){
- const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,explanation,sort_order,is_published').order('created_at',{ascending:false});
+ $('questionBank').innerHTML='<p class="muted">載入題庫中⋯</p>';
+ const {data,error}=await fetchAllQuestions();
  if(error){msg('bankMsg','讀取題庫失敗：'+error.message);return}
- if(!data.length){$('questionBank').innerHTML='<div class="notice">目前題庫是空的。上傳題目後會先保存在這裡。</div>';return}
- $('questionBank').innerHTML=data.map(q=>{const c=courses.find(x=>x.id===q.course_id);return `<label class="option" style="align-items:flex-start"><input type="checkbox" class="bank-check" value="${q.id}"><span style="flex:1"><b>${escapeHtml(c?.name||'未分類課程')}</b><span class="tag">${q.is_published?'已發布':'草稿／未發布'}</span><div style="margin-top:5px">${escapeHtml(q.question_text)}</div><small class="muted">題目 ID：${q.id.slice(0,8)}</small></span></label>`}).join('');
+ bankAll=data;bkSel.clear();
+ const cur=$('bkCourse').value;
+ $('bkCourse').innerHTML='<option value="">全部課程</option>'+courses.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+ $('bkCourse').value=cur;
+ const groups=new Map();
+ bankAll.forEach(q=>{const k=qKey(q);if(!groups.has(k))groups.set(k,[]);groups.get(k).push(q)});
+ dupInfo=new Map();bkExtras=[];
+ groups.forEach(g=>{
+  if(g.length<2)return;
+  g.forEach(q=>dupInfo.set(q.id,g.length));
+  const sorted=[...g].sort((a,b)=>(b.is_published?1:0)-(a.is_published?1:0)||new Date(a.created_at)-new Date(b.created_at));
+  bkExtras.push(...sorted.slice(1).map(q=>q.id));
+ });
+ bkPage=0;renderBank();
 }
+['bkCourse','bkStatus','bkType','bkDup'].forEach(id=>$(id).onchange=()=>{bkPage=0;renderBank()});
+$('bkSearch').oninput=()=>{bkPage=0;renderBank()};
+$('bkPrev').onclick=()=>{bkPage--;renderBank()};
+$('bkNext').onclick=()=>{bkPage++;renderBank()};
+$('bkSelectAll').onclick=()=>{bkFiltered().forEach(q=>bkSel.add(q.id));renderBank()};
+$('bkSelectNone').onclick=()=>{bkSel.clear();renderBank()};
+$('bkPickDup').onclick=()=>{
+ if(!bkExtras.length){msg('bankMsg','沒有發現重複的題目。');return}
+ bkExtras.forEach(id=>bkSel.add(id));$('bkDup').value='dup';bkPage=0;renderBank();
+ msg('bankMsg',`已勾選 ${bkExtras.length} 題多餘的重複題（每組保留一題，優先保留已發布、較早建立的）。確認無誤後，按「刪除勾選題目」。`);
+};
 async function updateSelectedQuestions(published){
- const ids=[...document.querySelectorAll('.bank-check:checked')].map(x=>x.value);
+ const ids=[...bkSel];
  if(!ids.length){msg('bankMsg','請先勾選要操作的題目。');return}
  const {error}=await sb.from('hp_questions').update({is_published:published,published_at:published?new Date().toISOString():null}).in('id',ids);
  if(error){msg('bankMsg','更新失敗：'+error.message);return}
@@ -861,7 +940,7 @@ $('refreshBank').onclick=loadQuestionBank;
 $('publishSelected').onclick=()=>updateSelectedQuestions(true);
 $('unpublishSelected').onclick=()=>updateSelectedQuestions(false);
 $('deleteSelected').onclick=async()=>{
- const ids=[...document.querySelectorAll('.bank-check:checked')].map(x=>x.value);
+ const ids=[...bkSel];
  if(!ids.length){msg('bankMsg','請先勾選要刪除的題目。');return}
  if(!(await showOwlConfirm(`確定要永久刪除 ${ids.length} 題嗎？\n刪除後無法復原，學生對這些題目的作答紀錄也可能一併消失。`,'刪除題目','🗑️')))return;
  const {error}=await sb.from('hp_questions').delete().in('id',ids);
