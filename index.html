@@ -782,7 +782,7 @@ function parseCSV(text){
 }
 function rowToQuestion(r){
  const raw=(r[5]||'').trim(),o=[1,2,3,4,8].map(i=>(r[i]||'').trim());
- const letters=[...new Set(raw.toUpperCase().replace(/[^A-E]/g,'').split(''))].sort().join('');
+ const letters=ansLetters(raw);
  const map={'單選':'single','單選題':'single','多選':'multi','多選題':'multi','填充':'fill','填充題':'fill',single:'single',multi:'multi',fill:'fill'};
  let type=map[(r[7]||'').trim().toLowerCase()];
  if(!type)type=!o.some(Boolean)?'fill':(letters.length>1?'multi':'single');
@@ -909,6 +909,14 @@ async function readCsvText(file){
  try{return new TextDecoder('utf-8',{fatal:true}).decode(buf).replace(/^\uFEFF/,'')}
  catch(e){return new TextDecoder('big5').decode(buf)}
 }
+function ansLetters(s){
+ s=String(s||'').normalize('NFKC').toUpperCase();
+ const m=[...s.matchAll(/\(\s*([A-E])\s*\)/g)].map(x=>x[1]);
+ if(m.length)return [...new Set(m)].sort().join('');
+ if(/^[\s,;、，\/&和及與A-E]+$/.test(s))return [...new Set(s.replace(/[^A-E]/g,'').split(''))].sort().join('');
+ const l=s.match(/^\s*([A-E])(?=[\s.)．:：]|$)/);
+ return l?l[1]:'';
+}
 function examRow(r,h){
  const g=n=>(r[h.indexOf(n)]||'').trim();
  const full=g('題目').replace(/\r/g,''),opts={},stem=[];let cur=null;
@@ -924,7 +932,7 @@ function examRow(r,h){
   if(parts.length>2){stemText=parts[0].trim();for(const p of parts.slice(1)){const m=p.match(/^[（(]([A-Ea-e])[)）]\s*([\s\S]*)$/);if(m)opts[m[1].toUpperCase()]=m[2].trim()}}
  }
  const rawAns=g('答案'),has=Object.keys(opts).length>=2;
- const letters=[...new Set(rawAns.toUpperCase().replace(/[^A-E]/g,'').split(''))].sort().join('');
+ const letters=ansLetters(rawAns);
  const type=!has?'fill':(letters.length>1?'multi':'single');
  const extra=[g('題目出處')&&'出處：'+g('題目出處'),g('主要知識點')&&'知識點：'+g('主要知識點')].filter(Boolean).join('\n');
  return {question_text:stemText,option_a:opts.A||'',option_b:opts.B||'',option_c:opts.C||'',option_d:opts.D||'',option_e:opts.E||'',answer:has?letters:rawAns,explanation:[g('解析'),extra].filter(Boolean).join('\n\n'),question_type:type};
