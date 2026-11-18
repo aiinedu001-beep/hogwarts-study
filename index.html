@@ -173,388 +173,6 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 .q-text,.feedback{white-space:pre-line}
 </style>
 </head>
-<script>
-// 草稿題目編輯功能：不修改既有發布、答題或刪除流程
-(function () {
-  const bank = document.getElementById('questionBank');
-  if (!bank || typeof renderBank !== 'function') return;
-
-  let draftId = null;
-  let draftType = null;
-  let draftOwner = null;
-  let dirty = false;
-  let busy = false;
-
-  // 建立編輯區，放在題庫列表上方
-  const editor = document.createElement('div');
-  editor.className = 'panel hidden';
-  editor.id = 'draftEditorBox';
-
-  editor.innerHTML = `
-    <h2>✏️ 編輯草稿題目</h2>
-    <p class="sub">
-      僅修改目前這一道未發布題目；儲存後仍是草稿。
-      題型與所屬課程不會變更。
-    </p>
-
-    <form id="draftEditForm">
-      <div class="field">
-        <label for="draftEditQuestion">題目</label>
-        <textarea id="draftEditQuestion" style="min-height:90px"></textarea>
-      </div>
-
-      <p class="muted" id="draftEditType"></p>
-
-      <div id="draftEditOptions">
-        <div class="field">
-          <label for="draftEditA">選項 A</label>
-          <textarea id="draftEditA" style="min-height:55px"></textarea>
-        </div>
-        <div class="field">
-          <label for="draftEditB">選項 B</label>
-          <textarea id="draftEditB" style="min-height:55px"></textarea>
-        </div>
-        <div class="field">
-          <label for="draftEditC">選項 C</label>
-          <textarea id="draftEditC" style="min-height:55px"></textarea>
-        </div>
-        <div class="field">
-          <label for="draftEditD">選項 D</label>
-          <textarea id="draftEditD" style="min-height:55px"></textarea>
-        </div>
-        <div class="field">
-          <label for="draftEditE">選項 E</label>
-          <textarea id="draftEditE" style="min-height:55px"></textarea>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="draftEditAnswer">正確答案</label>
-        <input id="draftEditAnswer"
-          placeholder="單選：A；多選：AC；填充：3|三">
-      </div>
-
-      <div class="field">
-        <label for="draftEditExplanation">解析</label>
-        <textarea id="draftEditExplanation" style="min-height:90px"></textarea>
-      </div>
-
-      <div id="draftEditMsg" class="notice hidden" role="status"></div>
-
-      <div class="row">
-        <button type="submit" class="btn primary">儲存草稿</button>
-        <button type="button" class="btn" id="draftEditCancel">取消編輯</button>
-      </div>
-    </form>
-  `;
-
-  bank.parentNode.insertBefore(editor, bank);
-
-  const form = document.getElementById('draftEditForm');
-  const editMsg = document.getElementById('draftEditMsg');
-  const optionLetters = ['A', 'B', 'C', 'D', 'E'];
-
-  function setBusy(value) {
-    busy = value;
-    form.querySelectorAll('input, textarea, button').forEach(el => {
-      el.disabled = value;
-    });
-  }
-
-  function showEditMessage(text) {
-    editMsg.textContent = text;
-    editMsg.classList.remove('hidden');
-  }
-
-  function clearEditMessage() {
-    editMsg.textContent = '';
-    editMsg.classList.add('hidden');
-  }
-
-  function closeEditor() {
-    form.reset();
-    editor.classList.add('hidden');
-    clearEditMessage();
-    draftId = null;
-    draftType = null;
-    draftOwner = null;
-    dirty = false;
-  }
-
-  form.addEventListener('input', () => {
-    dirty = true;
-  });
-
-  document.getElementById('draftEditCancel').addEventListener('click', async () => {
-    if (busy) return;
-
-    if (dirty) {
-      setBusy(true);
-      const confirmed = await showOwlConfirm(
-        '目前有尚未儲存的修改，確定要取消嗎？',
-        '取消編輯草稿'
-      );
-      setBusy(false);
-      if (!confirmed) return;
-    }
-
-    closeEditor();
-  });
-
-  async function openDraftEditor(id) {
-    if (busy || !sb || !user || !isAdmin) return;
-
-    setBusy(true);
-
-    try {
-      if (dirty) {
-        const confirmed = await showOwlConfirm(
-          '目前有尚未儲存的修改，切換題目將會放棄這些修改。確定繼續嗎？',
-          '切換編輯題目'
-        );
-        if (!confirmed) return;
-      }
-
-      const openingUser = user.id;
-
-      // 重新向資料庫確認題目仍為未發布
-      const { data, error } = await sb
-        .from('hp_questions')
-        .select(
-          'id,question_text,option_a,option_b,option_c,option_d,option_e,answer,explanation,question_type,is_published'
-        )
-        .eq('id', id)
-        .or('is_published.eq.false,is_published.is.null')
-        .maybeSingle();
-
-      if (!user || user.id !== openingUser || !isAdmin) return;
-
-      if (error) {
-        msg('bankMsg', '讀取草稿失敗：' + error.message);
-        return;
-      }
-
-      if (!data) {
-        msg(
-          'bankMsg',
-          '找不到可編輯的草稿。題目可能已發布、已刪除，或目前帳號沒有讀取權限。請重新整理題庫。'
-        );
-        return;
-      }
-
-      draftId = data.id;
-      draftType = data.question_type || 'single';
-      draftOwner = openingUser;
-
-      document.getElementById('draftEditQuestion').value =
-        data.question_text ?? '';
-
-      optionLetters.forEach(letter => {
-        document.getElementById('draftEdit' + letter).value =
-          data['option_' + letter.toLowerCase()] ?? '';
-      });
-
-      document.getElementById('draftEditAnswer').value = data.answer ?? '';
-      document.getElementById('draftEditExplanation').value =
-        data.explanation ?? '';
-
-      const typeNames = {
-        single: '單選題',
-        multi: '多選題',
-        fill: '填充題'
-      };
-
-      document.getElementById('draftEditType').textContent =
-        '題型：' + (typeNames[draftType] || draftType);
-
-      document.getElementById('draftEditOptions')
-        .classList.toggle('hidden', draftType === 'fill');
-
-      clearEditMessage();
-      dirty = false;
-      editor.classList.remove('hidden');
-      editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    } catch (err) {
-      msg('bankMsg', '讀取草稿時發生錯誤：' + (err.message || String(err)));
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  form.addEventListener('submit', async event => {
-    event.preventDefault();
-
-    if (busy || !draftId || !sb || !user || !isAdmin) return;
-
-    if (user.id !== draftOwner) {
-      showEditMessage('登入帳號已變更，請重新開啟草稿。');
-      return;
-    }
-
-    const question = document.getElementById('draftEditQuestion').value;
-    const rawAnswer = document.getElementById('draftEditAnswer').value.trim();
-    const explanation = document.getElementById('draftEditExplanation').value;
-
-    if (!question.trim()) {
-      showEditMessage('請輸入題目。');
-      return;
-    }
-
-    if (!rawAnswer) {
-      showEditMessage('請輸入正確答案。');
-      return;
-    }
-
-    const changes = {
-      question_text: question,
-      answer: rawAnswer,
-      explanation: explanation
-    };
-
-    if (draftType !== 'fill') {
-      const options = {};
-
-      optionLetters.forEach(letter => {
-        options[letter] = document.getElementById('draftEdit' + letter).value;
-      });
-
-      if (optionLetters.filter(letter => options[letter].trim()).length < 2) {
-        showEditMessage('選擇題請至少填寫兩個選項。');
-        return;
-      }
-
-      const normalized = rawAnswer.normalize('NFKC').toUpperCase();
-
-      if (!/^[A-E\s,、;\/&和及與]+$/.test(normalized)) {
-        showEditMessage('選擇題答案請使用 A～E，例如 A 或 AC。');
-        return;
-      }
-
-      const letters = [
-        ...new Set(normalized.replace(/[^A-E]/g, '').split('').filter(Boolean))
-      ].sort();
-
-      if (!letters.length) {
-        showEditMessage('請至少填寫一個正確選項。');
-        return;
-      }
-
-      if (draftType === 'single' && letters.length !== 1) {
-        showEditMessage('單選題只能有一個正確答案。');
-        return;
-      }
-
-      if (draftType === 'multi' && letters.length < 2) {
-        showEditMessage('多選題請填寫至少兩個正確答案。');
-        return;
-      }
-
-      if (letters.some(letter => !options[letter].trim())) {
-        showEditMessage('正確答案指向的選項不可空白。');
-        return;
-      }
-
-      changes.answer = letters.join('');
-
-      optionLetters.forEach(letter => {
-        changes['option_' + letter.toLowerCase()] = options[letter];
-      });
-    }
-
-    clearEditMessage();
-    setBusy(true);
-
-    try {
-      // 僅更新同一題且目前仍未發布的資料
-      const { data, error } = await sb
-        .from('hp_questions')
-        .update(changes)
-        .eq('id', draftId)
-        .or('is_published.eq.false,is_published.is.null')
-        .select('id')
-        .maybeSingle();
-
-      if (error) {
-        showEditMessage('儲存失敗：' + error.message);
-        return;
-      }
-
-      if (!data) {
-        showEditMessage(
-          '無法確認儲存結果。題目可能已發布、已刪除，或帳號沒有更新權限；請重新整理題庫後確認。'
-        );
-        return;
-      }
-
-      // 儲存後更新題庫，保留原本的勾選與頁次
-      const selected = [...bkSel];
-      const previousPage = bkPage;
-
-      closeEditor();
-      await loadQuestionBank();
-
-      const existingIds = new Set(bankAll.map(q => q.id));
-      bkSel.clear();
-      selected.forEach(id => {
-        if (existingIds.has(id)) bkSel.add(id);
-      });
-
-      bkPage = previousPage;
-      renderBank();
-
-      msg(
-        'bankMsg',
-        '草稿已儲存，尚未發布。若列表沒有更新，請按「重新整理題庫」確認。'
-      );
-    } catch (err) {
-      showEditMessage('儲存時發生錯誤：' + (err.message || String(err)));
-    } finally {
-      setBusy(false);
-    }
-  });
-
-  // 保留原本題庫顯示，再為未發布題目加上編輯按鈕
-  const originalRenderBank = renderBank;
-
-  renderBank = function () {
-    originalRenderBank();
-
-    bank.querySelectorAll('.bank-check').forEach(checkbox => {
-      const question = bankAll.find(q => String(q.id) === checkbox.value);
-      if (!question || question.is_published) return;
-
-      const label = checkbox.closest('label.option');
-      if (!label) return;
-
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'btn';
-      button.textContent = '✏️ 編輯草稿';
-      button.style.margin = '0 0 12px';
-
-      button.addEventListener('click', () => openDraftEditor(question.id));
-
-      // 按鈕放在勾選標籤外，避免按編輯時誤勾選
-      label.insertAdjacentElement('afterend', button);
-    });
-  };
-
-  // 登出或切換帳號時，清除畫面上尚未儲存的草稿內容
-  if (sb) {
-    sb.auth.onAuthStateChange((_event, session) => {
-      if (
-        draftOwner &&
-        (!session || !session.user || session.user.id !== draftOwner)
-      ) {
-        closeEditor();
-      }
-    });
-  }
-
-  // 若題庫已經載入，立即顯示按鈕
-  if (isAdmin && bankAll.length) renderBank();
-})();
-</script>
 <body>
 <!-- 魔法大禮堂漂浮蠟燭與星塵畫布 -->
 <canvas id="magicCanvas"></canvas>
@@ -1042,6 +660,29 @@ function hide(id){$(id).classList.add('hidden')}
 function showOnly(id){try{sessionStorage.setItem('hpView',id)}catch(e){}['homeView','courseView','adminView','wrongView'].forEach(x=>$(x).classList.toggle('hidden',x!==id));$('tabs').classList.toggle('hidden',id==='adminView');$('tabHome').classList.toggle('primary',id!=='wrongView');$('tabWrong').classList.toggle('primary',id==='wrongView')}
 function authNotice(t){msg('authMsg',t)}
 function escapeHtml(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+// 顯示題目中的圖片標記，其餘內容維持純文字
+function renderQuestionText(text) {
+  text = String(text ?? '');
+
+  const pattern = /!\[([^\]\n]*)\]\((https:\/\/[^\s<>)]+)\)/g;
+  let result = '';
+  let lastIndex = 0;
+  let match;
+
+  while ((match = pattern.exec(text)) !== null) {
+    result += escapeHtml(text.slice(lastIndex, match.index));
+
+    result += `<img
+      src="${escapeHtml(match[2])}"
+      alt="${escapeHtml(match[1] || '題目圖片')}"
+      loading="lazy"
+      style="display:block;max-width:100%;height:auto;margin:12px 0">`;
+
+    lastIndex = pattern.lastIndex;
+  }
+
+  return result + escapeHtml(text.slice(lastIndex));
+}
 function answerInput(q,name,disabled){
  const t=q.question_type||'single';
  if(t==='fill')return `<div class="field"><input type="text" class="fill-input" name="${name}" placeholder="請輸入答案" autocomplete="off" ${disabled?'disabled':''}></div>`;
@@ -1422,5 +1063,388 @@ $('wrongFilter').onchange=renderWrong;
 
 init();
 </script>
+<script>
+// 草稿題目編輯功能：不修改既有發布、答題或刪除流程
+(function () {
+  const bank = document.getElementById('questionBank');
+  if (!bank || typeof renderBank !== 'function') return;
+
+  let draftId = null;
+  let draftType = null;
+  let draftOwner = null;
+  let dirty = false;
+  let busy = false;
+
+  // 建立編輯區，放在題庫列表上方
+  const editor = document.createElement('div');
+  editor.className = 'panel hidden';
+  editor.id = 'draftEditorBox';
+
+  editor.innerHTML = `
+    <h2>✏️ 編輯草稿題目</h2>
+    <p class="sub">
+      僅修改目前這一道未發布題目；儲存後仍是草稿。
+      題型與所屬課程不會變更。
+    </p>
+
+    <form id="draftEditForm">
+      <div class="field">
+        <label for="draftEditQuestion">題目</label>
+        <textarea id="draftEditQuestion" style="min-height:90px"></textarea>
+      </div>
+
+      <p class="muted" id="draftEditType"></p>
+
+      <div id="draftEditOptions">
+        <div class="field">
+          <label for="draftEditA">選項 A</label>
+          <textarea id="draftEditA" style="min-height:55px"></textarea>
+        </div>
+        <div class="field">
+          <label for="draftEditB">選項 B</label>
+          <textarea id="draftEditB" style="min-height:55px"></textarea>
+        </div>
+        <div class="field">
+          <label for="draftEditC">選項 C</label>
+          <textarea id="draftEditC" style="min-height:55px"></textarea>
+        </div>
+        <div class="field">
+          <label for="draftEditD">選項 D</label>
+          <textarea id="draftEditD" style="min-height:55px"></textarea>
+        </div>
+        <div class="field">
+          <label for="draftEditE">選項 E</label>
+          <textarea id="draftEditE" style="min-height:55px"></textarea>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="draftEditAnswer">正確答案</label>
+        <input id="draftEditAnswer"
+          placeholder="單選：A；多選：AC；填充：3|三">
+      </div>
+
+      <div class="field">
+        <label for="draftEditExplanation">解析</label>
+        <textarea id="draftEditExplanation" style="min-height:90px"></textarea>
+      </div>
+
+      <div id="draftEditMsg" class="notice hidden" role="status"></div>
+
+      <div class="row">
+        <button type="submit" class="btn primary">儲存草稿</button>
+        <button type="button" class="btn" id="draftEditCancel">取消編輯</button>
+      </div>
+    </form>
+  `;
+
+  bank.parentNode.insertBefore(editor, bank);
+
+  const form = document.getElementById('draftEditForm');
+  const editMsg = document.getElementById('draftEditMsg');
+  const optionLetters = ['A', 'B', 'C', 'D', 'E'];
+
+  function setBusy(value) {
+    busy = value;
+    form.querySelectorAll('input, textarea, button').forEach(el => {
+      el.disabled = value;
+    });
+  }
+
+  function showEditMessage(text) {
+    editMsg.textContent = text;
+    editMsg.classList.remove('hidden');
+  }
+
+  function clearEditMessage() {
+    editMsg.textContent = '';
+    editMsg.classList.add('hidden');
+  }
+
+  function closeEditor() {
+    form.reset();
+    editor.classList.add('hidden');
+    clearEditMessage();
+    draftId = null;
+    draftType = null;
+    draftOwner = null;
+    dirty = false;
+  }
+
+  form.addEventListener('input', () => {
+    dirty = true;
+  });
+
+  document.getElementById('draftEditCancel').addEventListener('click', async () => {
+    if (busy) return;
+
+    if (dirty) {
+      setBusy(true);
+      const confirmed = await showOwlConfirm(
+        '目前有尚未儲存的修改，確定要取消嗎？',
+        '取消編輯草稿'
+      );
+      setBusy(false);
+      if (!confirmed) return;
+    }
+
+    closeEditor();
+  });
+
+  async function openDraftEditor(id) {
+    if (busy || !sb || !user || !isAdmin) return;
+
+    setBusy(true);
+
+    try {
+      if (dirty) {
+        const confirmed = await showOwlConfirm(
+          '目前有尚未儲存的修改，切換題目將會放棄這些修改。確定繼續嗎？',
+          '切換編輯題目'
+        );
+        if (!confirmed) return;
+      }
+
+      const openingUser = user.id;
+
+      // 重新向資料庫確認題目仍為未發布
+      const { data, error } = await sb
+        .from('hp_questions')
+        .select(
+          'id,question_text,option_a,option_b,option_c,option_d,option_e,answer,explanation,question_type,is_published'
+        )
+        .eq('id', id)
+        .or('is_published.eq.false,is_published.is.null')
+        .maybeSingle();
+
+      if (!user || user.id !== openingUser || !isAdmin) return;
+
+      if (error) {
+        msg('bankMsg', '讀取草稿失敗：' + error.message);
+        return;
+      }
+
+      if (!data) {
+        msg(
+          'bankMsg',
+          '找不到可編輯的草稿。題目可能已發布、已刪除，或目前帳號沒有讀取權限。請重新整理題庫。'
+        );
+        return;
+      }
+
+      draftId = data.id;
+      draftType = data.question_type || 'single';
+      draftOwner = openingUser;
+
+      document.getElementById('draftEditQuestion').value =
+        data.question_text ?? '';
+
+      optionLetters.forEach(letter => {
+        document.getElementById('draftEdit' + letter).value =
+          data['option_' + letter.toLowerCase()] ?? '';
+      });
+
+      document.getElementById('draftEditAnswer').value = data.answer ?? '';
+      document.getElementById('draftEditExplanation').value =
+        data.explanation ?? '';
+
+      const typeNames = {
+        single: '單選題',
+        multi: '多選題',
+        fill: '填充題'
+      };
+
+      document.getElementById('draftEditType').textContent =
+        '題型：' + (typeNames[draftType] || draftType);
+
+      document.getElementById('draftEditOptions')
+        .classList.toggle('hidden', draftType === 'fill');
+
+      clearEditMessage();
+      dirty = false;
+      editor.classList.remove('hidden');
+      editor.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    } catch (err) {
+      msg('bankMsg', '讀取草稿時發生錯誤：' + (err.message || String(err)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  form.addEventListener('submit', async event => {
+    event.preventDefault();
+
+    if (busy || !draftId || !sb || !user || !isAdmin) return;
+
+    if (user.id !== draftOwner) {
+      showEditMessage('登入帳號已變更，請重新開啟草稿。');
+      return;
+    }
+
+    const question = document.getElementById('draftEditQuestion').value;
+    const rawAnswer = document.getElementById('draftEditAnswer').value.trim();
+    const explanation = document.getElementById('draftEditExplanation').value;
+
+    if (!question.trim()) {
+      showEditMessage('請輸入題目。');
+      return;
+    }
+
+    if (!rawAnswer) {
+      showEditMessage('請輸入正確答案。');
+      return;
+    }
+
+    const changes = {
+      question_text: question,
+      answer: rawAnswer,
+      explanation: explanation
+    };
+
+    if (draftType !== 'fill') {
+      const options = {};
+
+      optionLetters.forEach(letter => {
+        options[letter] = document.getElementById('draftEdit' + letter).value;
+      });
+
+      if (optionLetters.filter(letter => options[letter].trim()).length < 2) {
+        showEditMessage('選擇題請至少填寫兩個選項。');
+        return;
+      }
+
+      const normalized = rawAnswer.normalize('NFKC').toUpperCase();
+
+      if (!/^[A-E\s,、;\/&和及與]+$/.test(normalized)) {
+        showEditMessage('選擇題答案請使用 A～E，例如 A 或 AC。');
+        return;
+      }
+
+      const letters = [
+        ...new Set(normalized.replace(/[^A-E]/g, '').split('').filter(Boolean))
+      ].sort();
+
+      if (!letters.length) {
+        showEditMessage('請至少填寫一個正確選項。');
+        return;
+      }
+
+      if (draftType === 'single' && letters.length !== 1) {
+        showEditMessage('單選題只能有一個正確答案。');
+        return;
+      }
+
+      if (draftType === 'multi' && letters.length < 2) {
+        showEditMessage('多選題請填寫至少兩個正確答案。');
+        return;
+      }
+
+      if (letters.some(letter => !options[letter].trim())) {
+        showEditMessage('正確答案指向的選項不可空白。');
+        return;
+      }
+
+      changes.answer = letters.join('');
+
+      optionLetters.forEach(letter => {
+        changes['option_' + letter.toLowerCase()] = options[letter];
+      });
+    }
+
+    clearEditMessage();
+    setBusy(true);
+
+    try {
+      // 僅更新同一題且目前仍未發布的資料
+      const { data, error } = await sb
+        .from('hp_questions')
+        .update(changes)
+        .eq('id', draftId)
+        .or('is_published.eq.false,is_published.is.null')
+        .select('id')
+        .maybeSingle();
+
+      if (error) {
+        showEditMessage('儲存失敗：' + error.message);
+        return;
+      }
+
+      if (!data) {
+        showEditMessage(
+          '無法確認儲存結果。題目可能已發布、已刪除，或帳號沒有更新權限；請重新整理題庫後確認。'
+        );
+        return;
+      }
+
+      // 儲存後更新題庫，保留原本的勾選與頁次
+      const selected = [...bkSel];
+      const previousPage = bkPage;
+
+      closeEditor();
+      await loadQuestionBank();
+
+      const existingIds = new Set(bankAll.map(q => q.id));
+      bkSel.clear();
+      selected.forEach(id => {
+        if (existingIds.has(id)) bkSel.add(id);
+      });
+
+      bkPage = previousPage;
+      renderBank();
+
+      msg(
+        'bankMsg',
+        '草稿已儲存，尚未發布。若列表沒有更新，請按「重新整理題庫」確認。'
+      );
+    } catch (err) {
+      showEditMessage('儲存時發生錯誤：' + (err.message || String(err)));
+    } finally {
+      setBusy(false);
+    }
+  });
+
+  // 保留原本題庫顯示，再為未發布題目加上編輯按鈕
+  const originalRenderBank = renderBank;
+
+  renderBank = function () {
+    originalRenderBank();
+
+    bank.querySelectorAll('.bank-check').forEach(checkbox => {
+      const question = bankAll.find(q => String(q.id) === checkbox.value);
+      if (!question || question.is_published) return;
+
+      const label = checkbox.closest('label.option');
+      if (!label) return;
+
+      const button = document.createElement('button');
+      button.type = 'button';
+      button.className = 'btn';
+      button.textContent = '✏️ 編輯草稿';
+      button.style.margin = '0 0 12px';
+
+      button.addEventListener('click', () => openDraftEditor(question.id));
+
+      // 按鈕放在勾選標籤外，避免按編輯時誤勾選
+      label.insertAdjacentElement('afterend', button);
+    });
+  };
+
+  // 登出或切換帳號時，清除畫面上尚未儲存的草稿內容
+  if (sb) {
+    sb.auth.onAuthStateChange((_event, session) => {
+      if (
+        draftOwner &&
+        (!session || !session.user || session.user.id !== draftOwner)
+      ) {
+        closeEditor();
+      }
+    });
+  }
+
+  // 若題庫已經載入，立即顯示按鈕
+  if (isAdmin && bankAll.length) renderBank();
+})();
+</script>
+
 </body>
 </html>
