@@ -749,7 +749,13 @@ async function openCourse(id){
  if(isMath(currentCourse)){window.open(MATH_URL,'_blank','noopener');return}
  $('courseTitle').textContent=currentCourse.name;$('courseDesc').textContent=currentCourse.description||'專心研習，讓知識成為你的魔法。';
  $('questionList').innerHTML='<p class="muted">正在從校長室的題庫取出題目⋯</p>';showOnly('courseView');
- const {data,error}=await sb.from('hp_questions').select('id,course_id,question_text,option_a,option_b,option_c,option_d,option_e,explanation,sort_order,question_type').eq('course_id',id).eq('is_published',true).order('sort_order');
+const {data,error}=await sb.from('hp_questions')
+  .select('id,course_id,question_text,option_a,option_b,option_c,option_d,option_e,explanation,sort_order,question_type')
+  .eq('course_id',id)
+  .eq('is_published',true)
+  .order('published_at',{ascending:false,nullsFirst:false})
+  .order('sort_order',{ascending:true})
+  .order('id',{ascending:true});
  if(error){$('questionList').textContent='讀取題目失敗：'+error.message;return}
  if(!data.length){$('questionList').innerHTML='<div class="notice">這門課程目前還沒有題目，請等待校長發布。</div>';return}
  const done=new Set(attempts.map(a=>a.question_id));
