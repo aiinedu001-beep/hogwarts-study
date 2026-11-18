@@ -173,6 +173,86 @@ button,.btn,.pill{min-height:44px;touch-action:manipulation}input,textarea,selec
 .q-text,.feedback{white-space:pre-line}
 </style>
 </head>
+& {
+    Add-Type -AssemblyName System.Drawing
+
+    $root = (Get-Location).Path
+    $source = Join-Path $root "original.jpg"
+    $output = Join-Path $root "svg_output"
+
+    if (-not (Test-Path -LiteralPath $source)) {
+        throw "找不到 original.jpg。請確認圖片已放在開啟的資料夾中。"
+    }
+
+    New-Item -ItemType Directory -Path $output -Force | Out-Null
+
+    $image = [System.Drawing.Image]::FromFile($source)
+    $scaleX = $image.Width / 1376.0
+    $scaleY = $image.Height / 768.0
+
+    $rowY = @(90, 305, 518)
+    $rowHeight = @(210, 207, 207)
+    $files = @()
+
+    for ($row = 0; $row -lt 3; $row++) {
+        for ($col = 0; $col -lt 4; $col++) {
+            $x = [int][Math]::Round($col * 344 * $scaleX)
+            $y = [int][Math]::Round($rowY[$row] * $scaleY)
+            $width = [int][Math]::Round(344 * $scaleX)
+            $height = [int][Math]::Round($rowHeight[$row] * $scaleY)
+
+            $bitmap = [System.Drawing.Bitmap]::new($width, $height)
+            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+
+            $destination = [System.Drawing.Rectangle]::new(
+                0, 0, $width, $height
+            )
+            $crop = [System.Drawing.Rectangle]::new(
+                $x, $y, $width, $height
+            )
+
+            $graphics.DrawImage(
+                $image, $destination, $crop,
+                [System.Drawing.GraphicsUnit]::Pixel
+            )
+            $graphics.Dispose()
+
+            $stream = [System.IO.MemoryStream]::new()
+            $bitmap.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+            $data = [Convert]::ToBase64String($stream.ToArray())
+
+            $stream.Dispose()
+            $bitmap.Dispose()
+
+            $svg = @"
+<svg xmlns="http://www.w3.org/2000/svg"
+     xmlns:xlink="http://www.w3.org/1999/xlink"
+     width="$width" height="$height"
+     viewBox="0 0 $width $height">
+  <image width="$width" height="$height"
+         xlink:href="data:image/png;base64,$data"/>
+</svg>
+"@
+
+            $number = $row * 4 + $col + 1
+            $filename = "{0:00}.svg" -f $number
+            $path = Join-Path $output $filename
+
+            [System.IO.File]::WriteAllText(
+                $path, $svg, [System.Text.Encoding]::UTF8
+            )
+            $files += $path
+        }
+    }
+
+    $image.Dispose()
+
+    $zip = Join-Path $root "12_images_svg.zip"
+    Compress-Archive -LiteralPath $files -DestinationPath $zip -Force
+
+    Write-Host "完成！12 張 SVG 在：$output"
+    Write-Host "ZIP 壓縮檔在：$zip"
+}
 <body>
 <!-- 魔法大禮堂漂浮蠟燭與星塵畫布 -->
 <canvas id="magicCanvas"></canvas>
